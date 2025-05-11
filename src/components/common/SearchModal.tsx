@@ -150,7 +150,81 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
     ]);
   };
 
-  // Get comprehensive instant results as user types
+  // Generate text-based search suggestions based on query
+  const getSearchSuggestions = (query: string) => {
+    const normalizedQuery = query.toLowerCase().trim();
+    if (normalizedQuery.length === 0) {
+      setSearchSuggestions([]);
+      return;
+    }
+    
+    // Get category matches
+    const categoryMatches = categories
+      .filter(category => 
+        category.id !== 'all' && 
+        (category.name.toLowerCase().startsWith(normalizedQuery) ||
+         category.name.toLowerCase().includes(normalizedQuery))
+      )
+      .map(category => category.name);
+    
+    // Get brand matches
+    const brandMatches = brands
+      .filter(brand => 
+        brand.id !== 'all' && 
+        (brand.name.toLowerCase().startsWith(normalizedQuery) ||
+         brand.name.toLowerCase().includes(normalizedQuery))
+      )
+      .map(brand => brand.name);
+    
+    // Get product name matches (both starts with and contains)
+    const productNameMatches = products
+      .filter(product => 
+        product.name.toLowerCase().startsWith(normalizedQuery) ||
+        product.name.toLowerCase().includes(` ${normalizedQuery}`) || // Word boundaries
+        product.category.toLowerCase().includes(normalizedQuery) ||
+        (product.description && product.description.toLowerCase().includes(normalizedQuery))
+      )
+      .map(product => product.name);
+    
+    // Add common search patterns
+    let suggestedCompletions = [
+      `${normalizedQuery} `
+    ];
+    
+    // Combine all potential suggestions
+    const allPotentialSuggestions = [
+      ...categoryMatches,
+      ...brandMatches, 
+      ...productNameMatches,
+      ...suggestedCompletions
+    ];
+    
+    // Remove duplicates
+    const uniqueSuggestions = Array.from(new Set(allPotentialSuggestions));
+    
+    // Filter to keep only unique suggestions that are different from the query
+    const filteredSuggestions = uniqueSuggestions.filter(suggestion => 
+      suggestion.toLowerCase() !== normalizedQuery &&
+      suggestion.length > normalizedQuery.length
+    );
+    
+    // Sort by relevance:
+    // 1. First, terms that start with the query
+    // 2. Then other matches
+    // 3. For equal relevance, sort by length (shorter first)
+    const sortedSuggestions = filteredSuggestions.sort((a, b) => {
+      const aStartsWith = a.toLowerCase().startsWith(normalizedQuery) ? 0 : 1;
+      const bStartsWith = b.toLowerCase().startsWith(normalizedQuery) ? 0 : 1;
+      
+      if (aStartsWith !== bStartsWith) return aStartsWith - bStartsWith;
+      return a.length - b.length;
+    });
+    
+    // Take top 5 results
+    setSearchSuggestions(sortedSuggestions.slice(0, 5));
+  };
+
+  // Improved instant results function to find more matches
   const getInstantResults = (query: string) => {
     const normalizedQuery = query.toLowerCase().trim();
     
@@ -159,6 +233,30 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
       brand => brand.name.toLowerCase().includes(normalizedQuery) || 
                brand.id.toLowerCase().includes(normalizedQuery)
     );
+    
+    // Get all matching products
+    // 1. First priority: Starts with query
+    const startsWithProducts = products.filter(product => 
+      product.name.toLowerCase().startsWith(normalizedQuery) ||
+      product.category.toLowerCase().startsWith(normalizedQuery) ||
+      (product.brand && product.brand.toLowerCase().startsWith(normalizedQuery))
+    );
+    
+    // 2. Second priority: Contains query
+    const containsProducts = products.filter(product => {
+      // Skip if already in startsWithProducts
+      if (startsWithProducts.some(p => p.id === product.id)) return false;
+      
+      return (
+        product.name.toLowerCase().includes(normalizedQuery) || 
+        product.category.toLowerCase().includes(normalizedQuery) ||
+        (product.brand && product.brand.toLowerCase().includes(normalizedQuery)) ||
+        product.description.toLowerCase().includes(normalizedQuery)
+      );
+    });
+    
+    // Combine results
+    const allMatchingProducts = [...startsWithProducts, ...containsProducts];
     
     if (matchedBrandObj) {
       setMatchedBrand(matchedBrandObj.name);
@@ -174,17 +272,13 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
           price: product.price
         }));
       
-      setInstantResults(brandProducts);
+      setInstantResults(brandProducts.slice(0, 6));
     } else {
       setMatchedBrand(null);
       
       // Get all products matching the query
-      const matchingProducts = products
-        .filter(product => 
-          product.name.toLowerCase().includes(normalizedQuery) || 
-          product.description.toLowerCase().includes(normalizedQuery) ||
-          product.category.toLowerCase().includes(normalizedQuery)
-        )
+      const matchingProducts = allMatchingProducts
+        .slice(0, 6) // Limit to 6 products for UI display
         .map(product => ({
           type: 'product' as const,
           id: product.id,
@@ -195,55 +289,6 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
       
       setInstantResults(matchingProducts);
     }
-  };
-
-  // Generate text-based search suggestions based on query
-  const getSearchSuggestions = (query: string) => {
-    const normalizedQuery = query.toLowerCase().trim();
-    
-    // Start with exact matching terms
-    let suggestionsToShow = [normalizedQuery];
-    
-    // Add specific common patterns
-    suggestionsToShow = [
-      ...suggestionsToShow,
-      `${normalizedQuery} homme`,
-      `${normalizedQuery}s pour homme`
-    ];
-    
-    // Get more suggestions from product data
-    const productWordSuggestions = products.flatMap(product => {
-      const productName = product.name.toLowerCase();
-      // Check if any word starts with the query
-      if (productName.startsWith(normalizedQuery) || 
-          productName.split(' ').some(word => word.startsWith(normalizedQuery))) {
-        return [productName];
-      }
-      return [];
-    });
-    
-    // Combine all suggestions
-    const allSuggestions = [...suggestionsToShow, ...productWordSuggestions];
-    
-    // Remove duplicates
-    const uniqueSuggestions = Array.from(new Set(allSuggestions));
-    
-    // Filter to keep only the ones that would return results
-    const validSuggestions = uniqueSuggestions.filter(suggestion => 
-      suggestion !== normalizedQuery && // Don't include exact query
-      products.some(product => 
-        product.name.toLowerCase().includes(suggestion) || 
-        (product.brand && product.brand.toLowerCase().includes(suggestion)) ||
-        product.category.toLowerCase().includes(suggestion) ||
-        product.description.toLowerCase().includes(suggestion)
-      )
-    );
-    
-    // Sort by length (shorter suggestions first)
-    const sortedSuggestions = validSuggestions.sort((a, b) => a.length - b.length);
-    
-    // Take top 3
-    setSearchSuggestions(sortedSuggestions.slice(0, 3));
   };
 
   // Handle search submission (if user presses Enter)
