@@ -25,6 +25,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
   const [instantResults, setInstantResults] = useState<SearchSuggestion[]>([]);
   const [matchedBrand, setMatchedBrand] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [autoNavigateTimeout, setAutoNavigateTimeout] = useState<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
@@ -35,7 +36,14 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
         searchInputRef.current?.focus();
       }, 100);
     }
-  }, [isOpen]);
+
+    // Clear any navigation timeouts when modal closes
+    return () => {
+      if (autoNavigateTimeout) {
+        clearTimeout(autoNavigateTimeout);
+      }
+    };
+  }, [isOpen, autoNavigateTimeout]);
 
   // Load recent searches from localStorage
   useEffect(() => {
@@ -54,6 +62,11 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
     const query = e.target.value;
     setSearchQuery(query);
 
+    // Clear any existing navigation timeout
+    if (autoNavigateTimeout) {
+      clearTimeout(autoNavigateTimeout);
+    }
+
     if (query.trim().length >= 1) {
       setIsSearching(true);
       
@@ -64,7 +77,10 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
         setIsSearching(false);
       }, 300);
       
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        if (autoNavigateTimeout) clearTimeout(autoNavigateTimeout);
+      };
     } else {
       setSuggestions([]);
       setInstantResults([]);
@@ -175,7 +191,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  // Handle search submission
+  // Handle search submission (if user presses Enter)
   const handleSearch = (e?: React.FormEvent) => {
     if (e) {
       e.preventDefault();
@@ -200,6 +216,11 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
 
   // Handle suggestion click
   const handleSuggestionClick = (suggestion: SearchSuggestion) => {
+    // Clear any auto-navigate timeout when user clicks a suggestion
+    if (autoNavigateTimeout) {
+      clearTimeout(autoNavigateTimeout);
+    }
+    
     switch (suggestion.type) {
       case 'product':
         navigate(`/product/${suggestion.id}`);
@@ -217,6 +238,11 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
 
   // Handle recent search click
   const handleRecentSearchClick = (search: string) => {
+    // Clear any auto-navigate timeout when user clicks a recent search
+    if (autoNavigateTimeout) {
+      clearTimeout(autoNavigateTimeout);
+    }
+    
     setSearchQuery(search);
     navigate(`/search?q=${encodeURIComponent(search)}`);
     onClose();
@@ -225,6 +251,11 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
   // Handle search icon click when there's a query
   const handleSearchIconClick = () => {
     if (searchQuery.trim()) {
+      // Clear any auto-navigate timeout when user clicks search icon
+      if (autoNavigateTimeout) {
+        clearTimeout(autoNavigateTimeout);
+      }
+      
       handleSearch();
     }
   };
@@ -237,213 +268,172 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-50 bg-black bg-opacity-50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 bg-white overflow-auto"
         >
-          <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -50 }}
-            transition={{ duration: 0.4, type: 'spring', stiffness: 300, damping: 30 }}
-            className="w-full bg-white shadow-xl"
-          >
-            <div className="container mx-auto max-w-screen-xl">
-              {/* Search input and buttons */}
-              <div className="py-8 border-b border-gray-200 relative">
-                <div className="flex items-center px-4 md:px-0">
-                  <form onSubmit={handleSearch} className="flex-1 flex items-center relative">
-                    <div className="w-10 h-10 flex items-center justify-center">
-                      {isSearching ? (
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        >
-                          <Loader size={20} className="text-luxury-gray" />
-                        </motion.div>
-                      ) : (
-                        <Search 
-                          size={20} 
-                          className="text-luxury-gray cursor-pointer"
-                          onClick={handleSearchIconClick}
-                        />
-                      )}
-                    </div>
-                    <input
-                      ref={searchInputRef}
-                      type="text"
-                      value={searchQuery}
-                      onChange={handleSearchChange}
-                      onFocus={() => setIsFocused(true)}
-                      onBlur={() => setTimeout(() => setIsFocused(false), 200)}
-                      placeholder="What are you looking for?"
-                      className="w-full py-2 px-2 text-xl md:text-2xl font-light text-luxury-black focus:outline-none placeholder-luxury-gray"
-                      autoComplete="off"
-                    />
-                  </form>
+          <div className="container mx-auto px-4 py-8 relative">
+            {/* Close button (X) positioned at top-right */}
+            <button 
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2"
+              aria-label="Close search"
+            >
+              <X size={18} className="text-black" />
+            </button>
+            
+            {/* Brand Header */}
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-normal uppercase tracking-widest">
+                {matchedBrand || "MAROC LUXE"}
+              </h2>
+            </div>
+
+            {/* Search input */}
+            <div className="max-w-xl mx-auto mb-8">
+              <form onSubmit={handleSearch} className="relative flex items-center border border-gray-300 rounded-full overflow-hidden">
+                <div className="flex-shrink-0 pl-4">
+                  {isSearching ? (
+                    <Loader size={16} className="text-gray-500" />
+                  ) : (
+                    <Search size={16} className="text-gray-500" onClick={handleSearchIconClick} />
+                  )}
+                </div>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+                  placeholder="Rechercher"
+                  className="flex-grow py-2 px-3 text-sm focus:outline-none"
+                  autoComplete="off"
+                />
+                {searchQuery.trim() && (
                   <button 
-                    onClick={onClose}
-                    className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                    aria-label="Close search"
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="flex-shrink-0 px-4 py-2 text-xs text-gray-500"
                   >
-                    <X size={20} className="text-luxury-black" />
+                    Effacer
                   </button>
+                )}
+              </form>
+            </div>
+
+            {/* Popular searches */}
+            {searchQuery.trim() === '' && (
+              <div className="max-w-3xl mx-auto mb-12 text-center">
+                <p className="uppercase text-xs tracking-wider text-gray-500 mb-4">Recherches Populaires</p>
+                <div className="flex flex-wrap justify-center gap-6">
+                  {['speedy', 'pochette', 'neverfull', 'bracelet', 'portefeuille'].map(term => (
+                    <button 
+                      key={term}
+                      onClick={() => handleRecentSearchClick(term)} 
+                      className="text-sm hover:underline"
+                    >
+                      {term}
+                    </button>
+                  ))}
                 </div>
               </div>
+            )}
 
-              {/* Search suggestions and results */}
-              <div className="py-8 px-4 md:px-0 overflow-y-auto max-h-[70vh]">
-                {/* Recent searches - only show when no query */}
-                {searchQuery.trim() === '' && recentSearches.length > 0 && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="mb-10"
-                  >
-                    <h3 className="text-sm text-luxury-gray uppercase tracking-wider mb-4">Recent Searches</h3>
-                    <div className="space-y-4">
-                      {recentSearches.map((search, index) => (
-                        <motion.button
-                          key={index}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.05 }}
-                          onClick={() => handleRecentSearchClick(search)}
-                          className="block text-lg text-luxury-black hover:text-luxury-gold transition-colors"
-                        >
-                          {search}
-                        </motion.button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Trending searches */}
-                {searchQuery.trim() === '' && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
-                    className="mb-10"
-                  >
-                    <h3 className="text-sm text-luxury-gray uppercase tracking-wider mb-4">Trending Now</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {['Luxury Bags', 'Designer Shoes', 'Summer Collection', 'Premium Accessories'].map((item, index) => (
-                        <motion.button
-                          key={index}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.3, delay: index * 0.05 }}
-                          onClick={() => handleRecentSearchClick(item)}
-                          className="bg-gray-50 hover:bg-gray-100 p-4 text-center transition-colors"
-                        >
-                          {item}
-                        </motion.button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Instant results when typing */}
-                {searchQuery.trim() !== '' && (
-                  <AnimatePresence mode="wait">
-                    {isSearching ? (
-                      <motion.div 
-                        key="searching"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="py-12 flex justify-center"
-                      >
-                        <div className="text-luxury-gray text-center">
-                          <div className="inline-block mb-4">
-                            <motion.div
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                            >
-                              <Loader size={24} className="text-luxury-gold" />
-                            </motion.div>
-                          </div>
-                          <p>Searching...</p>
-                        </div>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="results"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                      >
-                        {/* Brand matched heading */}
-                        {matchedBrand && instantResults.length > 0 && (
-                          <div className="mb-6">
-                            <h3 className="text-xl font-serif text-luxury-black mb-4">
-                              {matchedBrand} Products
-                            </h3>
-                          </div>
-                        )}
-
-                        {/* Show instant results */}
-                        {instantResults.length > 0 ? (
-                          <div className="mb-8">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                              {instantResults.map((result, index) => (
-                                <motion.div
-                                  key={`instant-${result.id}-${index}`}
-                                  initial={{ opacity: 0, y: 20 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                                  className="group cursor-pointer"
-                                  onClick={() => handleSuggestionClick(result)}
-                                >
-                                  {result.image && (
-                                    <div className="aspect-square overflow-hidden mb-3">
-                                      <motion.img 
-                                        src={result.image} 
-                                        alt={result.name} 
-                                        className="w-full h-full object-cover transition-transform duration-700"
-                                        whileHover={{ scale: 1.05 }}
-                                      />
-                                    </div>
-                                  )}
-                                  <div>
-                                    <p className="font-serif text-luxury-black group-hover:text-luxury-gold transition-colors">
-                                      {result.name}
-                                    </p>
-                                    {result.price && (
-                                      <p className="text-luxury-gray mt-1">
-                                        {result.price.toLocaleString()} MAD
-                                      </p>
-                                    )}
-                                  </div>
-                                </motion.div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : searchQuery.trim().length > 1 && (
-                          <div className="text-luxury-gray text-center py-8">
-                            <p>No results for "{searchQuery}"</p>
-                            <p className="mt-2 text-sm">Try checking your spelling or use more general terms</p>
-                          </div>
-                        )}
-
-                        {/* If we have more results than shown, show button */}
-                        {instantResults.length > 0 && (
-                          <div className="mt-8 text-center">
-                            <button
-                              onClick={handleSearch}
-                              className="btn btn-primary inline-flex items-center"
-                            >
-                              View all results <ArrowRight size={16} className="ml-2" />
-                            </button>
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                )}
+            {/* Recent search example - simplified to match Louis Vuitton style */}
+            {searchQuery.trim() === '' && recentSearches.length > 0 && (
+              <div className="max-w-3xl mx-auto mb-12">
+                <p className="text-sm mb-4">{recentSearches[0]}</p>
               </div>
-            </div>
-          </motion.div>
+            )}
+
+            {/* Search results */}
+            {searchQuery.trim() !== '' && !isSearching && (
+              <>
+                {instantResults.length > 0 ? (
+                  <div>
+                    {/* Brand matched heading if applicable */}
+                    {matchedBrand && (
+                      <h3 className="text-xl mb-6">
+                        {matchedBrand} Products
+                      </h3>
+                    )}
+                    
+                    {/* Products grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                      {instantResults.map((result, index) => (
+                        <div 
+                          key={`product-${result.id}-${index}`}
+                          className="group relative cursor-pointer"
+                          onClick={() => handleSuggestionClick(result)}
+                        >
+                          {/* Favorite button */}
+                          <button 
+                            className="absolute right-2 top-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Add favorite functionality
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                            </svg>
+                          </button>
+                          
+                          {/* Product image */}
+                          <div className="mb-2">
+                            <div className="text-xs text-gray-500 mb-1">Nouveau</div>
+                            {result.image && (
+                              <div className="aspect-square bg-gray-50">
+                                <img 
+                                  src={result.image}
+                                  alt={result.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Product info */}
+                          <div>
+                            <p className="text-xs text-gray-900 font-light leading-tight mb-1 line-clamp-2">
+                              {result.name}
+                            </p>
+                            {result.price && (
+                              <p className="text-xs text-gray-900">
+                                {result.price.toLocaleString()} MAD
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* View all results */}
+                    <div className="text-center">
+                      <button
+                        onClick={handleSearch}
+                        className="text-sm hover:underline inline-flex items-center"
+                      >
+                        View all results <ArrowRight size={14} className="ml-1" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-sm mb-2">No results found for "{searchQuery}"</p>
+                    <p className="text-xs text-gray-500">Try checking your spelling or use more general terms</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Loading state */}
+            {searchQuery.trim() !== '' && isSearching && (
+              <div className="text-center py-12">
+                <Loader size={20} className="mx-auto mb-2" />
+                <p className="text-sm text-gray-500">Searching...</p>
+              </div>
+            )}
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

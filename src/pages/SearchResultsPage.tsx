@@ -23,8 +23,8 @@ const SearchResultsPage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeBrand, setActiveBrand] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
-  const [categoryExpanded, setCategoryExpanded] = useState(true);
-  const [brandExpanded, setBrandExpanded] = useState(true);
+  const [categoryExpanded, setCategoryExpanded] = useState(false);
+  const [brandExpanded, setBrandExpanded] = useState(false);
   const [view, setView] = useState<'grid' | 'list'>('grid');
 
   // Category filters
@@ -41,33 +41,35 @@ const SearchResultsPage: React.FC = () => {
 
   useEffect(() => {
     if (query) {
-      // Simulate loading state
+      // Set loading state
       setLoading(true);
       
-      // Search for products after a short delay (simulating API call)
+      // Quick immediate search to improve perceived performance
+      const normalizedQuery = query.toLowerCase().trim();
+      const quickMatchedProducts = products
+        .filter(product => 
+          product.name.toLowerCase().includes(normalizedQuery) ||
+          (product.brand && product.brand.toLowerCase().includes(normalizedQuery)) ||
+          product.category.toLowerCase().includes(normalizedQuery) ||
+          product.description.toLowerCase().includes(normalizedQuery)
+        )
+        .map(product => ({
+          id: product.id,
+          name: product.name,
+          image: product.image,
+          price: product.price,
+          category: product.category,
+          brand: product.brand,
+          type: 'product' as const
+        }));
+      
+      setResults(quickMatchedProducts);
+      
+      // Simulate a more thorough search with a slight delay
+      // This gives the impression of a more thorough search
       setTimeout(() => {
-        const normalizedQuery = query.toLowerCase().trim();
-        
-        const matchedProducts = products
-          .filter(product => 
-            product.name.toLowerCase().includes(normalizedQuery) ||
-            (product.brand && product.brand.toLowerCase().includes(normalizedQuery)) ||
-            product.category.toLowerCase().includes(normalizedQuery) ||
-            product.description.toLowerCase().includes(normalizedQuery)
-          )
-          .map(product => ({
-            id: product.id,
-            name: product.name,
-            image: product.image,
-            price: product.price,
-            category: product.category,
-            brand: product.brand,
-            type: 'product' as const
-          }));
-        
-        setResults(matchedProducts);
         setLoading(false);
-      }, 500);
+      }, 300);
     } else {
       setResults([]);
       setLoading(false);
@@ -87,11 +89,13 @@ const SearchResultsPage: React.FC = () => {
   // Handle category selection
   const handleCategoryChange = (categoryId: string) => {
     setActiveCategory(categoryId);
+    setCategoryExpanded(false);
   };
 
   // Handle brand selection
   const handleBrandChange = (brandId: string) => {
     setActiveBrand(brandId);
+    setBrandExpanded(false);
   };
 
   // Reset all filters
@@ -100,10 +104,32 @@ const SearchResultsPage: React.FC = () => {
     setActiveBrand('all');
   };
 
+  // Toggle category dropdown
+  const toggleCategoryDropdown = () => {
+    setCategoryExpanded(!categoryExpanded);
+    if (brandExpanded) setBrandExpanded(false);
+  };
+
+  // Toggle brand dropdown
+  const toggleBrandDropdown = () => {
+    setBrandExpanded(!brandExpanded);
+    if (categoryExpanded) setCategoryExpanded(false);
+  };
+
   // Get brand name from ID
   const getBrandName = (brandId: string | undefined) => {
     if (!brandId) return null;
     return brands.find(b => b.id === brandId)?.name || brandId;
+  };
+
+  // Get active category name
+  const getActiveCategoryName = () => {
+    return categoryFilters.find(c => c.id === activeCategory)?.name || 'All Products';
+  };
+
+  // Get active brand name
+  const getActiveBrandName = () => {
+    return brandFilters.find(b => b.id === activeBrand)?.name || 'All Brands';
   };
 
   return (
@@ -125,18 +151,94 @@ const SearchResultsPage: React.FC = () => {
 
       <section className="py-8">
         <div className="container">
-          <div className="flex items-center justify-between mb-6">
-            {/* Mobile filter toggle */}
-            <button 
-              className="md:hidden flex items-center text-luxury-black"
-              onClick={toggleFilters}
-            >
-              <Filter size={18} className="mr-2" />
-              Filters {showFilters ? 'Hide' : 'Show'}
-            </button>
+          <div className="flex flex-wrap items-center justify-between mb-6">
+            {/* Compact filters row */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="text-luxury-black font-medium">Filters</div>
+              <div className="relative">
+                <button 
+                  onClick={toggleCategoryDropdown}
+                  className="flex items-center gap-2 px-3 py-1 border rounded-sm text-sm transition-colors hover:border-gray-300"
+                >
+                  <span>Category: {getActiveCategoryName()}</span>
+                  {categoryExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+                <AnimatePresence>
+                  {categoryExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute z-10 mt-1 bg-white border border-gray-200 rounded-sm shadow-lg p-2 w-48"
+                    >
+                      <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
+                        {categoryFilters.map(category => (
+                          <button 
+                            key={category.id}
+                            onClick={() => handleCategoryChange(category.id)}
+                            className={`text-left px-2 py-1 text-sm rounded-sm ${
+                              activeCategory === category.id 
+                                ? 'bg-luxury-gold/10 text-luxury-black' 
+                                : 'hover:bg-gray-100 text-luxury-gray'
+                            }`}
+                          >
+                            {category.name}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <div className="relative">
+                <button 
+                  onClick={toggleBrandDropdown}
+                  className="flex items-center gap-2 px-3 py-1 border rounded-sm text-sm transition-colors hover:border-gray-300"
+                >
+                  <span>Brand: {getActiveBrandName()}</span>
+                  {brandExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+                <AnimatePresence>
+                  {brandExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute z-10 mt-1 bg-white border border-gray-200 rounded-sm shadow-lg p-2 w-48"
+                    >
+                      <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
+                        {brandFilters.map(brand => (
+                          <button 
+                            key={brand.id}
+                            onClick={() => handleBrandChange(brand.id)}
+                            className={`text-left px-2 py-1 text-sm rounded-sm ${
+                              activeBrand === brand.id 
+                                ? 'bg-luxury-gold/10 text-luxury-black' 
+                                : 'hover:bg-gray-100 text-luxury-gray'
+                            }`}
+                          >
+                            {brand.name}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              {(activeCategory !== 'all' || activeBrand !== 'all') && (
+                <button 
+                  onClick={resetFilters}
+                  className="text-luxury-gold text-sm underline"
+                >
+                  Reset all
+                </button>
+              )}
+            </div>
 
             {/* View toggle */}
-            <div className="ml-auto flex border border-gray-200">
+            <div className="flex border border-gray-200 ml-auto mt-2 md:mt-0">
               <button 
                 className={`p-2 ${view === 'grid' ? 'bg-gray-100' : 'bg-white'}`}
                 onClick={() => setView('grid')}
@@ -154,225 +256,97 @@ const SearchResultsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row">
-            {/* Filters sidebar - desktop always visible, mobile toggleable */}
-            <AnimatePresence>
-              {(showFilters || window.innerWidth >= 768) && (
-                <motion.aside 
-                  className="w-full md:w-64 md:mr-8 mb-6 md:mb-0"
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -20, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="bg-white border border-gray-200 p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xl font-serif text-luxury-black">Filters</h2>
-                      <button 
-                        className="text-luxury-gray text-sm underline"
-                        onClick={resetFilters}
-                      >
-                        Reset all
-                      </button>
-                    </div>
-
-                    {/* Category filter */}
-                    <div className="mb-6">
-                      <button 
-                        className="flex w-full items-center justify-between text-luxury-black font-medium mb-3"
-                        onClick={() => setCategoryExpanded(!categoryExpanded)}
-                      >
-                        <span>Category</span>
-                        {categoryExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                      </button>
-                      
-                      <AnimatePresence>
-                        {categoryExpanded && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="space-y-2">
-                              {categoryFilters.map(category => (
-                                <label 
-                                  key={category.id} 
-                                  className="flex items-center cursor-pointer"
-                                >
-                                  <input
-                                    type="radio"
-                                    name="category"
-                                    checked={activeCategory === category.id}
-                                    onChange={() => handleCategoryChange(category.id)}
-                                    className="hidden"
-                                  />
-                                  <div className={`w-4 h-4 border mr-2 flex-shrink-0 transition-colors ${
-                                    activeCategory === category.id 
-                                      ? 'bg-luxury-gold border-luxury-gold' 
-                                      : 'border-gray-300'
-                                  }`}>
-                                    {activeCategory === category.id && (
-                                      <svg className="w-4 h-4 text-white" viewBox="0 0 24 24">
-                                        <path
-                                          fill="currentColor"
-                                          d="M9,16.17L4.83,12l-1.42,1.41L9,19 21,7l-1.41-1.41L9,16.17z"
-                                        />
-                                      </svg>
-                                    )}
-                                  </div>
-                                  <span className="text-luxury-black">
-                                    {category.name}
-                                  </span>
-                                </label>
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Brand filter */}
-                    <div>
-                      <button 
-                        className="flex w-full items-center justify-between text-luxury-black font-medium mb-3"
-                        onClick={() => setBrandExpanded(!brandExpanded)}
-                      >
-                        <span>Brand</span>
-                        {brandExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                      </button>
-                      
-                      <AnimatePresence>
-                        {brandExpanded && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="space-y-2 max-h-60 overflow-y-auto">
-                              {brandFilters.map(brand => (
-                                <label 
-                                  key={brand.id} 
-                                  className="flex items-center cursor-pointer"
-                                >
-                                  <input
-                                    type="radio"
-                                    name="brand"
-                                    checked={activeBrand === brand.id}
-                                    onChange={() => handleBrandChange(brand.id)}
-                                    className="hidden"
-                                  />
-                                  <div className={`w-4 h-4 border mr-2 flex-shrink-0 transition-colors ${
-                                    activeBrand === brand.id 
-                                      ? 'bg-luxury-gold border-luxury-gold' 
-                                      : 'border-gray-300'
-                                  }`}>
-                                    {activeBrand === brand.id && (
-                                      <svg className="w-4 h-4 text-white" viewBox="0 0 24 24">
-                                        <path
-                                          fill="currentColor"
-                                          d="M9,16.17L4.83,12l-1.42,1.41L9,19 21,7l-1.41-1.41L9,16.17z"
-                                        />
-                                      </svg>
-                                    )}
-                                  </div>
-                                  <span className="text-luxury-black">
-                                    {brand.name}
-                                  </span>
-                                </label>
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                </motion.aside>
-              )}
-            </AnimatePresence>
-
-            {/* Search results */}
-            <div className="flex-1">
-              {loading ? (
-                // Loading state with LV style loading spinner
-                <div className="py-12 text-center">
-                  <motion.div 
-                    className="w-20 h-20 mx-auto mb-4 border-t-2 border-luxury-gold rounded-full"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  />
-                  <p className="text-luxury-gray">Searching...</p>
-                </div>
-              ) : filteredResults.length > 0 ? (
-                // Search results grid
-                <div className={view === 'grid' 
-                  ? "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          {/* Search results */}
+          <div className="w-full">
+            {loading ? (
+              // Loading state with LV style loading spinner
+              <div className="py-12 text-center">
+                <motion.div 
+                  className="w-20 h-20 mx-auto mb-4 border-t-2 border-luxury-gold rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                />
+                <p className="text-luxury-gray">Searching...</p>
+              </div>
+            ) : filteredResults.length > 0 ? (
+              // Search results grid
+              <motion.div 
+                layout
+                className={view === 'grid' 
+                  ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6"
                   : "space-y-6"
-                }>
-                  {filteredResults.map(result => (
-                    <motion.div
-                      key={result.id}
-                      layout
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4 }}
-                      className={view === 'grid' ? "group" : "flex border-b border-gray-200 pb-6"}
-                    >
-                      <Link to={`/product/${result.id}`} className={view === 'grid' ? "block" : "flex flex-row gap-6"}>
-                        <div className={view === 'grid' 
+                }
+              >
+                {filteredResults.map((result, index) => (
+                  <motion.div
+                    key={result.id}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ 
+                      duration: 0.4, 
+                      delay: loading ? 0 : Math.min(index * 0.05, 0.5),
+                      type: "spring", 
+                      stiffness: 150, 
+                      damping: 20
+                    }}
+                    className={view === 'grid' ? "group" : "flex border-b border-gray-200 pb-6"}
+                  >
+                    <Link to={`/product/${result.id}`} className={view === 'grid' ? "block" : "flex flex-row gap-6"}>
+                      <motion.div 
+                        whileHover={{ scale: 1.03 }}
+                        transition={{ duration: 0.3 }}
+                        className={view === 'grid' 
                           ? "aspect-square overflow-hidden mb-4" 
                           : "w-40 h-40 flex-shrink-0 overflow-hidden"
-                        }>
-                          <img 
-                            src={result.image} 
-                            alt={result.name} 
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                          />
-                        </div>
+                        }
+                      >
+                        <img 
+                          src={result.image} 
+                          alt={result.name} 
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                      </motion.div>
+                      
+                      <div className={view === 'list' ? "flex-1" : ""}>
+                        {/* Brand if available */}
+                        {result.brand && (
+                          <div className="uppercase text-xs text-luxury-gray tracking-wider mb-1">
+                            {getBrandName(result.brand)}
+                          </div>
+                        )}
                         
-                        <div className={view === 'list' ? "flex-1" : ""}>
-                          {/* Brand if available */}
-                          {result.brand && (
-                            <div className="uppercase text-xs text-luxury-gray tracking-wider mb-1">
-                              {getBrandName(result.brand)}
-                            </div>
-                          )}
-                          
-                          <h3 className="font-serif text-luxury-black text-lg mb-1 transition-colors group-hover:text-luxury-gold">
-                            {result.name}
-                          </h3>
-                          
-                          <p className="text-luxury-gray">{result.price.toLocaleString()} MAD</p>
-                          
-                          {view === 'list' && (
-                            <p className="text-luxury-gray mt-2 line-clamp-2">
-                              {products.find(p => p.id === result.id)?.description.substring(0, 120)}...
-                            </p>
-                          )}
-                        </div>
-                      </Link>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                // No results
-                <div className="py-12 text-center">
-                  <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
-                    <X size={32} className="text-luxury-gray" />
-                  </div>
-                  <p className="text-luxury-gray mb-4">No results match your search.</p>
-                  <p className="text-luxury-gray">Try with a different term or browse our collections.</p>
-                  <div className="mt-8">
-                    <Link to="/shop" className="btn btn-primary">
-                      Browse our collections
+                        <h3 className="font-serif text-luxury-black text-lg mb-1 transition-colors group-hover:text-luxury-gold">
+                          {result.name}
+                        </h3>
+                        
+                        <p className="text-luxury-gray">{result.price.toLocaleString()} MAD</p>
+                        
+                        {view === 'list' && (
+                          <p className="text-luxury-gray mt-2 line-clamp-2">
+                            {products.find(p => p.id === result.id)?.description.substring(0, 120)}...
+                          </p>
+                        )}
+                      </div>
                     </Link>
-                  </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            ) : (
+              // No results
+              <div className="py-12 text-center">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+                  <X size={32} className="text-luxury-gray" />
                 </div>
-              )}
-            </div>
+                <p className="text-luxury-gray mb-4">No results match your search.</p>
+                <p className="text-luxury-gray">Try with a different term or browse our collections.</p>
+                <div className="mt-8">
+                  <Link to="/shop" className="btn btn-primary">
+                    Browse our collections
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>

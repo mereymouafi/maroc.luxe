@@ -155,8 +155,8 @@ const ProductDetailPage: React.FC = () => {
                         <img 
                           src={image} 
                           alt={`${product.name} - Image ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
+                  className="w-full h-full object-cover"
+                />
                       </div>
                     </SwiperSlide>
                   ))}
@@ -213,7 +213,7 @@ const ProductDetailPage: React.FC = () => {
               <div className="text-xl text-luxury-gold font-medium mb-6">
                 {product.price.toLocaleString()} MAD
               </div>
-
+              
               <div className="mb-8">
                 <p className="text-luxury-gray mb-4">
                   {product.description}
@@ -310,19 +310,19 @@ const ProductDetailPage: React.FC = () => {
               <div className="mb-6">
                 <div className="text-sm font-medium text-luxury-black mb-2">Quantity</div>
                 <div className="flex items-center border border-luxury-gray inline-block">
-                  <button 
-                    onClick={() => handleQuantityChange(-1)}
+                    <button 
+                      onClick={() => handleQuantityChange(-1)}
                     className="px-4 py-2 text-luxury-black focus:outline-none"
-                    disabled={quantity <= 1}
-                  >
+                      disabled={quantity <= 1}
+                    >
                     <Minus size={16} />
-                  </button>
+                    </button>
                   <span className="px-4 py-2 border-x border-luxury-gray">{quantity}</span>
-                  <button 
-                    onClick={() => handleQuantityChange(1)}
+                    <button 
+                      onClick={() => handleQuantityChange(1)}
                     className="px-4 py-2 text-luxury-black focus:outline-none"
-                    disabled={quantity >= 10}
-                  >
+                      disabled={quantity >= 10}
+                    >
                     <Plus size={16} />
                   </button>
                 </div>
@@ -355,13 +355,13 @@ const ProductDetailPage: React.FC = () => {
                   className="flex-1 py-3 px-6 bg-luxury-gold text-luxury-black hover:bg-luxury-gold/90 focus:outline-none transition-colors duration-300"
                 >
                   Quick Buy
-                </button>
-              </div>
-
+                  </button>
+                </div>
+                
               {/* Wishlist and Share */}
               <div className="flex space-x-6 mb-8">
                 <button className="flex items-center text-luxury-gray hover:text-luxury-black">
-                  <Heart size={18} className="mr-2" />
+                    <Heart size={18} className="mr-2" />
                   <span className="text-sm">Add to Wishlist</span>
                 </button>
                 <button className="flex items-center text-luxury-gray hover:text-luxury-black">
@@ -439,7 +439,7 @@ const ProductDetailPage: React.FC = () => {
                       <p>Free standard shipping on all orders over $300.</p>
                       <p className="mt-2">Delivery typically takes 3-5 business days depending on your location.</p>
                       <p className="mt-2">Returns accepted within 14 days of delivery for unused items in original packaging.</p>
-                    </div>
+              </div>
                   )}
                   
                   {activeTab === 'care' && (
@@ -571,7 +571,7 @@ const ProductDetailPage: React.FC = () => {
                 <p className="mt-4 text-luxury-gray text-sm">
                   To find your perfect size, measure your foot length and compare it with the chart above. If you are between sizes, we recommend going up to the larger size.
                 </p>
-              </div>
+                    </div>
             </div>
           </div>
         </div>
