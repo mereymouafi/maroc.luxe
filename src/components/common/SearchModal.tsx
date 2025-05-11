@@ -390,27 +390,27 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
           transition={{ duration: 0.3 }}
           className="fixed inset-0 z-50 bg-white overflow-auto"
         >
-          <div className="container mx-auto px-4 py-8 relative">
+          <div className="container mx-auto px-4 py-5 relative">
             {/* Close button (X) positioned at top-right */}
             <button 
               onClick={onClose}
-              className="absolute top-4 right-4 p-2"
+              className="absolute top-2 right-2 p-2"
               aria-label="Close search"
             >
               <X size={18} className="text-black" />
             </button>
             
             {/* Brand Header */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-5">
               <h2 className="text-2xl font-normal uppercase tracking-widest">
                 {matchedBrand || "MAROC LUXE"}
               </h2>
             </div>
 
               {/* Search input and buttons - Always visible */}
-            <div className="max-w-xl mx-auto mb-8 relative">
+            <div className="max-w-xl mx-auto mb-5 relative">
               <form onSubmit={handleSearch} className="relative flex items-center border border-gray-300 rounded-full overflow-hidden">
-                <div className="flex-shrink-0 pl-4">
+                <div className="flex-shrink-0 pl-3">
                       {isSearching ? (
                     <Loader size={16} className="text-gray-500" />
                   ) : (
@@ -440,7 +440,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                   <button 
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    className="flex-shrink-0 px-4 py-2 text-xs text-gray-500"
+                    className="flex-shrink-0 px-3 py-2 text-xs text-gray-500"
                   >
                     Effacer
                   </button>
@@ -501,9 +501,9 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
               </div>
 
             {/* Popular searches - Always visible */}
-            <div className="max-w-3xl mx-auto mb-12 text-center">
-              <p className="uppercase text-xs tracking-wider text-gray-500 mb-4">Recherches Populaires</p>
-              <div className="flex flex-wrap justify-center gap-6">
+            <div className="max-w-3xl mx-auto mb-8 text-center">
+              <p className="uppercase text-xs tracking-wider text-gray-500 mb-2">Recherches Populaires</p>
+              <div className="flex flex-wrap justify-center gap-4">
                 {[
                   { name: 'Handbags', id: 'handbags' },
                   { name: 'Accessories', id: 'accessories' },
@@ -531,20 +531,18 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
             {searchQuery.trim() !== '' && !isSearching && (
               <>
                 {instantResults.length > 0 ? (
-                  <div className="border-t border-gray-200 pt-8 mt-4">
-                    {/* Results heading */}
-                    <div className="mb-6">
-                      <h3 className="text-xl font-medium">Results for "{searchQuery}"</h3>
-                      <p className="text-sm text-gray-500">{instantResults.length} results found</p>
-                    </div>
-
-                    {/* Filter button */}
-                    <div className="flex items-center mb-6">
+                  <div className="border-t border-gray-200 pt-5 mt-2">
+                    {/* Results heading and filter on same line */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <p className="text-sm text-gray-500">{instantResults.length} results found</p>
+                      </div>
+                      {/* Filter button */}
                       <button 
                         onClick={toggleFilters}
-                        className="flex items-center gap-2 border border-gray-300 rounded-full px-4 py-2 text-sm"
+                        className="flex items-center gap-1 border border-gray-300 rounded-full px-4 py-1.5 text-sm"
                       >
-                        <span>Filtrer</span> <SlidersHorizontal size={16} />
+                        <span>Filtrer</span> <SlidersHorizontal size={14} />
                       </button>
                     </div>
 
@@ -556,13 +554,13 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
                           transition={{ duration: 0.3 }}
-                          className="bg-white border border-gray-200 rounded-md p-6 mb-6 overflow-hidden"
+                          className="bg-white border border-gray-200 rounded-md p-4 mb-4 overflow-hidden"
                         >
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {/* Category Filter */}
                             <div>
-                              <h4 className="font-medium mb-3">Category</h4>
-                              <div className="space-y-2">
+                              <h4 className="font-medium mb-2">Category</h4>
+                              <div className="space-y-1">
                                 <div className="flex items-center">
                                   <input type="radio" id="cat-all" name="category" defaultChecked className="mr-2" />
                                   <label htmlFor="cat-all" className="text-sm">All Products</label>
@@ -588,8 +586,8 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
 
                             {/* Brand Filter */}
                             <div>
-                              <h4 className="font-medium mb-3">Brand</h4>
-                              <div className="space-y-2">
+                              <h4 className="font-medium mb-2">Brand</h4>
+                              <div className="space-y-1">
                                 <div className="flex items-center">
                                   <input type="radio" id="brand-all" name="brand" defaultChecked className="mr-2" />
                                   <label htmlFor="brand-all" className="text-sm">All Brands</label>
@@ -618,8 +616,8 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
 
                             {/* Price Range Filter */}
                             <div>
-                              <h4 className="font-medium mb-3">Price Range</h4>
-                              <div className="space-y-2">
+                              <h4 className="font-medium mb-2">Price Range</h4>
+                              <div className="space-y-1">
                                 <div className="flex items-center">
                                   <input type="radio" id="price-all" name="price" defaultChecked className="mr-2" />
                                   <label htmlFor="price-all" className="text-sm">All Prices</label>
@@ -640,10 +638,10 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                           </div>
 
                           {/* Apply filters button */}
-                          <div className="mt-6 text-center">
+                          <div className="mt-4 text-center">
                             <button 
                               onClick={toggleFilters}
-                              className="bg-black text-white px-8 py-2 text-sm uppercase tracking-wider"
+                              className="bg-black text-white px-6 py-1.5 text-sm uppercase tracking-wider"
                             >
                               Apply Filters
                             </button>
@@ -653,7 +651,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                     </AnimatePresence>
 
                     {/* Products grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
                       {instantResults.map((result, index) => (
                         <div 
                           key={`product-${result.id}-${index}`}
@@ -662,7 +660,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                         >
                           {/* Favorite button */}
                           <button 
-                            className="absolute right-2 top-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute right-1 top-1 z-10 w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={(e) => {
                               e.stopPropagation();
                               // Add favorite functionality
@@ -674,8 +672,8 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                           </button>
                           
                           {/* Product image */}
-                          <div className="mb-2">
-                            <div className="text-xs text-gray-500 mb-1">Nouveau</div>
+                          <div className="mb-1">
+                            <div className="text-xs text-gray-500 mb-0.5">Nouveau</div>
                             {result.image && (
                               <div className="aspect-square bg-gray-50">
                                 <img 
@@ -689,7 +687,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                           
                           {/* Product info */}
                           <div>
-                            <p className="text-xs text-gray-900 font-light leading-tight mb-1 line-clamp-2">
+                            <p className="text-xs text-gray-900 font-light leading-tight mb-0.5 line-clamp-2">
                               {result.name}
                             </p>
                             {result.price && (
@@ -703,7 +701,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-12 border-t border-gray-200 mt-4">
+                  <div className="text-center py-8 border-t border-gray-200 mt-4">
                     <p className="text-sm mb-2">No results found for "{searchQuery}"</p>
                     <p className="text-xs text-gray-500">Try checking your spelling or use more general terms</p>
                   </div>
@@ -713,12 +711,12 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
 
             {/* Loading state */}
             {searchQuery.trim() !== '' && isSearching && (
-              <div className="text-center py-12 border-t border-gray-200 mt-4">
+              <div className="text-center py-8 border-t border-gray-200 mt-4">
                 <Loader size={20} className="mx-auto mb-2" />
                 <p className="text-sm text-gray-500">Searching...</p>
               </div>
             )}
-            </div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
