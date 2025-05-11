@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Search, ArrowRight, Loader } from 'lucide-react';
+import { X, Search, ArrowRight, Loader, SlidersHorizontal } from 'lucide-react';
 import { products, categories, brands } from '../../data/products';
 
 interface SearchModalProps {
@@ -28,6 +28,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
   const [isSearching, setIsSearching] = useState(false);
   const [autoNavigateTimeout, setAutoNavigateTimeout] = useState<number | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
@@ -374,6 +375,11 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
+  // Toggle filters panel
+  const toggleFilters = () => {
+    setShowFilters(!showFilters);
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -532,16 +538,119 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                       <p className="text-sm text-gray-500">{instantResults.length} results found</p>
                     </div>
 
-                    {/* Filters */}
-                    <div className="flex items-center mb-6 gap-4">
-                      <span className="text-md font-medium">Filters</span>
-                      <div className="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
-                        Category: All Products
-                      </div>
-                      <div className="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
-                        Brand: All Brands
-                      </div>
+                    {/* Filter button */}
+                    <div className="flex items-center mb-6">
+                      <button 
+                        onClick={toggleFilters}
+                        className="flex items-center gap-2 border border-gray-300 rounded-full px-4 py-2 text-sm"
+                      >
+                        <span>Filtrer</span> <SlidersHorizontal size={16} />
+                      </button>
                     </div>
+
+                    {/* Filter panel */}
+                    <AnimatePresence>
+                      {showFilters && (
+                        <motion.div 
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="bg-white border border-gray-200 rounded-md p-6 mb-6 overflow-hidden"
+                        >
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {/* Category Filter */}
+                            <div>
+                              <h4 className="font-medium mb-3">Category</h4>
+                              <div className="space-y-2">
+                                <div className="flex items-center">
+                                  <input type="radio" id="cat-all" name="category" defaultChecked className="mr-2" />
+                                  <label htmlFor="cat-all" className="text-sm">All Products</label>
+                                </div>
+                                {[
+                                  'Handbags',
+                                  'Accessories',
+                                  'Wallets',
+                                  'Collections',
+                                  'Footwear',
+                                  'Clothing',
+                                  'T-shirts',
+                                  'Jeans',
+                                  'Luggage'
+                                ].map((cat) => (
+                                  <div key={cat} className="flex items-center">
+                                    <input type="radio" id={`cat-${cat}`} name="category" className="mr-2" />
+                                    <label htmlFor={`cat-${cat}`} className="text-sm">{cat}</label>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Brand Filter */}
+                            <div>
+                              <h4 className="font-medium mb-3">Brand</h4>
+                              <div className="space-y-2">
+                                <div className="flex items-center">
+                                  <input type="radio" id="brand-all" name="brand" defaultChecked className="mr-2" />
+                                  <label htmlFor="brand-all" className="text-sm">All Brands</label>
+                                </div>
+                                {[
+                                  'ZEGNA',
+                                  'Loro Piana',
+                                  'Louis Vuitton',
+                                  'Dior',
+                                  'Gucci',
+                                  'Prada',
+                                  'Hermès',
+                                  'Dolce & Gabbana',
+                                  'Givenchy',
+                                  'Fendi',
+                                  'Loewe',
+                                  'Armani'
+                                ].map((brand) => (
+                                  <div key={brand} className="flex items-center">
+                                    <input type="radio" id={`brand-${brand}`} name="brand" className="mr-2" />
+                                    <label htmlFor={`brand-${brand}`} className="text-sm">{brand}</label>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Price Range Filter */}
+                            <div>
+                              <h4 className="font-medium mb-3">Price Range</h4>
+                              <div className="space-y-2">
+                                <div className="flex items-center">
+                                  <input type="radio" id="price-all" name="price" defaultChecked className="mr-2" />
+                                  <label htmlFor="price-all" className="text-sm">All Prices</label>
+                                </div>
+                                {[
+                                  { label: 'Under 1,000 MAD', id: 'under-1000' },
+                                  { label: '1,000 - 2,000 MAD', id: '1000-2000' },
+                                  { label: '2,000 - 5,000 MAD', id: '2000-5000' },
+                                  { label: 'Over 5,000 MAD', id: 'over-5000' }
+                                ].map((price) => (
+                                  <div key={price.id} className="flex items-center">
+                                    <input type="radio" id={`price-${price.id}`} name="price" className="mr-2" />
+                                    <label htmlFor={`price-${price.id}`} className="text-sm">{price.label}</label>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Apply filters button */}
+                          <div className="mt-6 text-center">
+                            <button 
+                              onClick={toggleFilters}
+                              className="bg-black text-white px-8 py-2 text-sm uppercase tracking-wider"
+                            >
+                              Apply Filters
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
                     {/* Products grid */}
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
