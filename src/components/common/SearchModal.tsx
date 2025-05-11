@@ -307,11 +307,37 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
       setRecentSearches(updatedSearches);
       localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
       
-      // Navigate to search results
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-      onClose();
-      setSearchQuery('');
+      // Instead of navigating away, update search results in-place
+      setIsSearching(true);
+      getSuggestions(searchQuery);
+      getInstantResults(searchQuery);
+      setShowSuggestions(false);
+      
+      // Short timeout to simulate search
+      setTimeout(() => {
+        setIsSearching(false);
+      }, 300);
     }
+  };
+
+  // Handle search icon click when there's a query
+  const handleSearchIconClick = () => {
+    if (searchQuery.trim()) {
+      // Clear any auto-navigate timeout when user clicks search icon
+      if (autoNavigateTimeout) {
+        clearTimeout(autoNavigateTimeout);
+      }
+      
+      handleSearch();
+    }
+  };
+
+  // Handle search suggestion click
+  const handleSearchSuggestionClick = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    getSuggestions(suggestion);
+    getInstantResults(suggestion);
+    setShowSuggestions(false);
   };
 
   // Handle suggestion click
@@ -348,27 +374,6 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  // Handle search icon click when there's a query
-  const handleSearchIconClick = () => {
-    if (searchQuery.trim()) {
-      // Clear any auto-navigate timeout when user clicks search icon
-      if (autoNavigateTimeout) {
-        clearTimeout(autoNavigateTimeout);
-      }
-      
-      handleSearch();
-    }
-  };
-
-  // Handle clicking a search suggestion
-  const handleSearchSuggestionClick = (suggestion: string) => {
-    setSearchQuery(suggestion);
-    getSuggestions(suggestion);
-    getInstantResults(suggestion);
-    navigate(`/search?q=${encodeURIComponent(suggestion)}`);
-    onClose();
-  };
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -396,21 +401,21 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
               </h2>
             </div>
 
-            {/* Search input and buttons */}
+              {/* Search input and buttons - Always visible */}
             <div className="max-w-xl mx-auto mb-8 relative">
               <form onSubmit={handleSearch} className="relative flex items-center border border-gray-300 rounded-full overflow-hidden">
                 <div className="flex-shrink-0 pl-4">
-                  {isSearching ? (
+                      {isSearching ? (
                     <Loader size={16} className="text-gray-500" />
                   ) : (
                     <Search size={16} className="text-gray-500" onClick={handleSearchIconClick} />
-                  )}
-                </div>
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={handleSearchChange}
+                      )}
+                    </div>
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      value={searchQuery}
+                      onChange={handleSearchChange}
                   onFocus={() => {
                     setIsFocused(true);
                     if (searchQuery.trim().length > 0) {
@@ -423,8 +428,8 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                   }, 200)}
                   placeholder="Rechercher"
                   className="flex-grow py-2 px-3 text-sm focus:outline-none"
-                  autoComplete="off"
-                />
+                      autoComplete="off"
+                    />
                 {searchQuery.trim() && (
                   <button 
                     type="button"
@@ -487,47 +492,59 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                   </div>
                 </div>
               )}
+              </div>
+
+            {/* Popular searches - Always visible */}
+            <div className="max-w-3xl mx-auto mb-12 text-center">
+              <p className="uppercase text-xs tracking-wider text-gray-500 mb-4">Recherches Populaires</p>
+              <div className="flex flex-wrap justify-center gap-6">
+                {[
+                  { name: 'Handbags', id: 'handbags' },
+                  { name: 'Accessories', id: 'accessories' },
+                  { name: 'Wallets', id: 'wallets' },
+                  { name: 'Collections', id: 'collections' },
+                  { name: 'Footwear', id: 'footwear' }
+                ].map(category => (
+                  <button 
+                    key={category.id}
+                    onClick={() => {
+                      setSearchQuery(category.name);
+                      getSuggestions(category.name);
+                      getInstantResults(category.name);
+                      setShowSuggestions(false);
+                    }}
+                    className="text-sm hover:underline"
+                  >
+                    {category.name}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Popular searches */}
-            {searchQuery.trim() === '' && (
-              <div className="max-w-3xl mx-auto mb-12 text-center">
-                <p className="uppercase text-xs tracking-wider text-gray-500 mb-4">Recherches Populaires</p>
-                <div className="flex flex-wrap justify-center gap-6">
-                  {['speedy', 'pochette', 'neverfull', 'bracelet', 'portefeuille'].map(term => (
-                    <button 
-                      key={term}
-                      onClick={() => handleRecentSearchClick(term)} 
-                      className="text-sm hover:underline"
-                    >
-                      {term}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Recent search example - simplified to match Louis Vuitton style */}
-            {searchQuery.trim() === '' && recentSearches.length > 0 && (
-              <div className="max-w-3xl mx-auto mb-12">
-                <p className="text-sm mb-4">{recentSearches[0]}</p>
-              </div>
-            )}
-
-            {/* Search results */}
+            {/* Results section */}
             {searchQuery.trim() !== '' && !isSearching && (
               <>
                 {instantResults.length > 0 ? (
-                  <div>
-                    {/* Brand matched heading if applicable */}
-                    {matchedBrand && (
-                      <h3 className="text-xl mb-6">
-                        {matchedBrand} Products
-                      </h3>
-                    )}
+                  <div className="border-t border-gray-200 pt-8 mt-4">
+                    {/* Results heading */}
+                    <div className="mb-6">
+                      <h3 className="text-xl font-medium">Results for "{searchQuery}"</h3>
+                      <p className="text-sm text-gray-500">{instantResults.length} results found</p>
+                    </div>
+
+                    {/* Filters */}
+                    <div className="flex items-center mb-6 gap-4">
+                      <span className="text-md font-medium">Filters</span>
+                      <div className="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
+                        Category: All Products
+                      </div>
+                      <div className="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
+                        Brand: All Brands
+                      </div>
+                    </div>
 
                     {/* Products grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
                       {instantResults.map((result, index) => (
                         <div 
                           key={`product-${result.id}-${index}`}
@@ -575,19 +592,9 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                         </div>
                       ))}
                     </div>
-                    
-                    {/* View all results */}
-                    <div className="text-center">
-                      <button
-                        onClick={handleSearch}
-                        className="text-sm hover:underline inline-flex items-center"
-                      >
-                        View all results <ArrowRight size={14} className="ml-1" />
-                      </button>
-                    </div>
                   </div>
                 ) : (
-                  <div className="text-center py-12">
+                  <div className="text-center py-12 border-t border-gray-200 mt-4">
                     <p className="text-sm mb-2">No results found for "{searchQuery}"</p>
                     <p className="text-xs text-gray-500">Try checking your spelling or use more general terms</p>
                   </div>
@@ -597,12 +604,12 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
 
             {/* Loading state */}
             {searchQuery.trim() !== '' && isSearching && (
-              <div className="text-center py-12">
+              <div className="text-center py-12 border-t border-gray-200 mt-4">
                 <Loader size={20} className="mx-auto mb-2" />
                 <p className="text-sm text-gray-500">Searching...</p>
               </div>
             )}
-          </div>
+            </div>
         </motion.div>
       )}
     </AnimatePresence>
