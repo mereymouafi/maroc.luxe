@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
-import SearchOverlay from '../search/SearchOverlay';
+import SearchModal from '../common/SearchModal';
 import { motion } from 'framer-motion';
 import AuthModal from '../auth/AuthModal';
 
@@ -55,7 +55,7 @@ const Layout: React.FC = () => {
       <Footer />
       
       {/* Overlay components */}
-      <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+      <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </div>
   );
