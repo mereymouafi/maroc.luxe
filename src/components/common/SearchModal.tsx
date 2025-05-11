@@ -20,12 +20,14 @@ interface SearchSuggestion {
 const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isFocused, setIsFocused] = useState(false);
   const [instantResults, setInstantResults] = useState<SearchSuggestion[]>([]);
   const [matchedBrand, setMatchedBrand] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [autoNavigateTimeout, setAutoNavigateTimeout] = useState<number | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
@@ -69,11 +71,13 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
 
     if (query.trim().length >= 1) {
       setIsSearching(true);
+      setShowSuggestions(true);
       
       // Debounce the search for better performance
       const timer = setTimeout(() => {
         getSuggestions(query);
         getInstantResults(query);
+        getSearchSuggestions(query);
         setIsSearching(false);
       }, 300);
       
@@ -83,9 +87,11 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
       };
     } else {
       setSuggestions([]);
+      setSearchSuggestions([]);
       setInstantResults([]);
       setMatchedBrand(null);
       setIsSearching(false);
+      setShowSuggestions(false);
     }
   };
 
@@ -191,6 +197,55 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  // Generate text-based search suggestions based on query
+  const getSearchSuggestions = (query: string) => {
+    const normalizedQuery = query.toLowerCase().trim();
+    
+    // Start with exact matching terms
+    let suggestionsToShow = [normalizedQuery];
+    
+    // Add specific common patterns
+    suggestionsToShow = [
+      ...suggestionsToShow,
+      `${normalizedQuery} homme`,
+      `${normalizedQuery}s pour homme`
+    ];
+    
+    // Get more suggestions from product data
+    const productWordSuggestions = products.flatMap(product => {
+      const productName = product.name.toLowerCase();
+      // Check if any word starts with the query
+      if (productName.startsWith(normalizedQuery) || 
+          productName.split(' ').some(word => word.startsWith(normalizedQuery))) {
+        return [productName];
+      }
+      return [];
+    });
+    
+    // Combine all suggestions
+    const allSuggestions = [...suggestionsToShow, ...productWordSuggestions];
+    
+    // Remove duplicates
+    const uniqueSuggestions = Array.from(new Set(allSuggestions));
+    
+    // Filter to keep only the ones that would return results
+    const validSuggestions = uniqueSuggestions.filter(suggestion => 
+      suggestion !== normalizedQuery && // Don't include exact query
+      products.some(product => 
+        product.name.toLowerCase().includes(suggestion) || 
+        (product.brand && product.brand.toLowerCase().includes(suggestion)) ||
+        product.category.toLowerCase().includes(suggestion) ||
+        product.description.toLowerCase().includes(suggestion)
+      )
+    );
+    
+    // Sort by length (shorter suggestions first)
+    const sortedSuggestions = validSuggestions.sort((a, b) => a.length - b.length);
+    
+    // Take top 3
+    setSearchSuggestions(sortedSuggestions.slice(0, 3));
+  };
+
   // Handle search submission (if user presses Enter)
   const handleSearch = (e?: React.FormEvent) => {
     if (e) {
@@ -260,6 +315,15 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  // Handle clicking a search suggestion
+  const handleSearchSuggestionClick = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    getSuggestions(suggestion);
+    getInstantResults(suggestion);
+    navigate(`/search?q=${encodeURIComponent(suggestion)}`);
+    onClose();
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -287,8 +351,8 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
               </h2>
             </div>
 
-            {/* Search input */}
-            <div className="max-w-xl mx-auto mb-8">
+            {/* Search input and buttons */}
+            <div className="max-w-xl mx-auto mb-8 relative">
               <form onSubmit={handleSearch} className="relative flex items-center border border-gray-300 rounded-full overflow-hidden">
                 <div className="flex-shrink-0 pl-4">
                   {isSearching ? (
@@ -302,8 +366,16 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                   type="text"
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+                  onFocus={() => {
+                    setIsFocused(true);
+                    if (searchQuery.trim().length > 0) {
+                      setShowSuggestions(true);
+                    }
+                  }}
+                  onBlur={() => setTimeout(() => {
+                    setIsFocused(false);
+                    setShowSuggestions(false);
+                  }, 200)}
                   placeholder="Rechercher"
                   className="flex-grow py-2 px-3 text-sm focus:outline-none"
                   autoComplete="off"
@@ -318,6 +390,58 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                   </button>
                 )}
               </form>
+
+              {/* Search Suggestions Dropdown */}
+              {showSuggestions && searchQuery.trim() && searchSuggestions.length > 0 && (
+                <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-100 shadow-lg">
+                  {searchSuggestions.map((suggestion, index) => {
+                    // Find where the query ends and suggestion begins
+                    const queryLower = searchQuery.toLowerCase();
+                    const suggestionLower = suggestion.toLowerCase();
+                    
+                    let displaySuggestion;
+                    
+                    if (suggestionLower.startsWith(queryLower)) {
+                      // Direct completion (e.g. 'jean' -> 'jean homme')
+                      displaySuggestion = (
+                        <>
+                          <span className="font-normal text-black">{searchQuery}</span>
+                          <span className="text-gray-500">{suggestion.slice(searchQuery.length)}</span>
+                        </>
+                      );
+                    } else if (suggestionLower.includes(queryLower)) {
+                      // Query appears in the middle (less common case)
+                      const parts = suggestionLower.split(queryLower);
+                      displaySuggestion = (
+                        <>
+                          <span className="text-gray-500">{parts[0]}</span>
+                          <span className="font-normal text-black">{searchQuery}</span>
+                          <span className="text-gray-500">{
+                            parts.slice(1).join(searchQuery.toLowerCase())
+                          }</span>
+                        </>
+                      );
+                    } else {
+                      // Fallback - just show the full suggestion
+                      displaySuggestion = <span>{suggestion}</span>;
+                    }
+                    
+                    return (
+                      <div 
+                        key={index}
+                        className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                        onClick={() => handleSearchSuggestionClick(suggestion)}
+                      >
+                        <Search size={16} className="text-gray-400 mr-3 flex-shrink-0" />
+                        <span className="text-sm">{displaySuggestion}</span>
+                      </div>
+                    );
+                  })}
+                  <div className="px-3 py-2 border-t border-gray-100">
+                    <a href="/stores" className="text-sm hover:underline">Trouvez nos magasins</a>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Popular searches */}
@@ -356,7 +480,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                         {matchedBrand} Products
                       </h3>
                     )}
-                    
+
                     {/* Products grid */}
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
                       {instantResults.map((result, index) => (
@@ -384,8 +508,8 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                             {result.image && (
                               <div className="aspect-square bg-gray-50">
                                 <img 
-                                  src={result.image}
-                                  alt={result.name}
+                                  src={result.image} 
+                                  alt={result.name} 
                                   className="w-full h-full object-cover"
                                 />
                               </div>
