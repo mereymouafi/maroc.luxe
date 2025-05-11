@@ -58,8 +58,11 @@ const HomePage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               { id: 1, title: 'Handbags', image: 'https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg', link: '/shop/handbags' },
-              { id: 2, title: 'Accessories', image: 'https://images.pexels.com/photos/1374128/pexels-photo-1374128.jpeg', link: '/shop/accessories' },
-              { id: 3, title: 'Collections', image: 'https://images.pexels.com/photos/1374910/pexels-photo-1374910.jpeg', link: '/shop/collections' },
+              { id: 2, title: 'Footwear', image: 'https://images.pexels.com/photos/267320/pexels-photo-267320.jpeg', link: '/shop/footwear' },
+              { id: 3, title: 'Accessories', image: 'https://images.pexels.com/photos/1374128/pexels-photo-1374128.jpeg', link: '/shop/accessories' },
+              { id: 4, title: 'T-shirts', image: 'https://images.pexels.com/photos/1656684/pexels-photo-1656684.jpeg', link: '/shop/tshirts' },
+              { id: 5, title: 'Jeans', image: 'https://images.pexels.com/photos/1082529/pexels-photo-1082529.jpeg', link: '/shop/jeans' },
+              { id: 6, title: 'Luggage', image: 'https://images.pexels.com/photos/2421374/pexels-photo-2421374.jpeg', link: '/shop/luggage' },
             ].map((category) => (
               <motion.div
                 key={category.id}
@@ -90,6 +93,49 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
+      {/* Luxury Brands */}
+      <section className="py-16 bg-white">
+        <div className="container">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-serif text-luxury-black mb-3">Luxury Brands</h2>
+            <p className="text-luxury-gray max-w-2xl mx-auto">
+              Discover our exclusive selection of the world's most prestigious brands
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
+            {[
+              { id: 1, name: 'ZEGNA', image: 'https://images.pexels.com/photos/19090/pexels-photo.jpg', link: '/shop/brand/zegna' },
+              { id: 2, name: 'Loro Piana', image: 'https://images.pexels.com/photos/2562992/pexels-photo-2562992.png', link: '/shop/brand/loro-piana' },
+              { id: 3, name: 'Louis Vuitton', image: 'https://images.pexels.com/photos/2421374/pexels-photo-2421374.jpeg', link: '/shop/brand/louis-vuitton' },
+              { id: 4, name: 'Dior', image: 'https://images.pexels.com/photos/2881785/pexels-photo-2881785.jpeg', link: '/shop/brand/dior' },
+              { id: 5, name: 'Prada', image: 'https://images.pexels.com/photos/6770028/pexels-photo-6770028.jpeg', link: '/shop/brand/prada' },
+              { id: 6, name: 'Givenchy', image: 'https://images.pexels.com/photos/1082529/pexels-photo-1082529.jpeg', link: '/shop/brand/givenchy' },
+            ].map((brand) => (
+              <motion.div
+                key={brand.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: brand.id * 0.1 }}
+                viewport={{ once: true }}
+                className="brand-card"
+              >
+                <Link to={brand.link} className="flex flex-col items-center">
+                  <div className="w-28 h-28 rounded-full overflow-hidden mb-3 border border-gray-200">
+                    <img 
+                      src={brand.image} 
+                      alt={brand.name} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <h3 className="text-center font-medium text-luxury-black">{brand.name}</h3>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* New Arrivals */}
       <section className="py-16">
         <div className="container">
@@ -102,16 +148,16 @@ const HomePage: React.FC = () => {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { id: 1, name: 'Elegant Tote Bag', price: 1950, image: 'https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg' },
-              { id: 2, name: 'Classic Shoulder Bag', price: 2250, image: 'https://images.pexels.com/photos/8390642/pexels-photo-8390642.jpeg' },
-              { id: 3, name: 'Signature Wallet', price: 850, image: 'https://images.pexels.com/photos/4452526/pexels-photo-4452526.jpeg' },
-              { id: 4, name: 'Luxury Watch', price: 3750, image: 'https://images.pexels.com/photos/9982109/pexels-photo-9982109.jpeg' },
+              { id: 21, name: 'ZEGNA TRIPLE STITCH', price: 2400, image: 'https://images.pexels.com/photos/19090/pexels-photo.jpg', brand: 'ZEGNA' },
+              { id: 23, name: 'Loro Piana Summer Walk Loafer', price: 2099, image: 'https://images.pexels.com/photos/2562992/pexels-photo-2562992.png', brand: 'Loro Piana' },
+              { id: 26, name: 'TSHIRT DIOR', price: 650, image: 'https://images.pexels.com/photos/2881785/pexels-photo-2881785.jpeg', brand: 'Dior' },
+              { id: 27, name: 'Valise Horizon 55', price: 7200, image: 'https://images.pexels.com/photos/2421374/pexels-photo-2421374.jpeg', brand: 'Louis Vuitton' },
             ].map((product) => (
               <motion.div
                 key={product.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: product.id * 0.1 }}
+                transition={{ duration: 0.5, delay: product.id * 0.01 }}
                 viewport={{ once: true }}
                 className="group product-card-hover"
               >
@@ -127,6 +173,9 @@ const HomePage: React.FC = () => {
                         Quick View
                       </button>
                     </div>
+                  </div>
+                  <div className="uppercase text-xs text-luxury-gray tracking-wider mb-1">
+                    {product.brand}
                   </div>
                   <h3 className="font-serif text-luxury-black text-lg mb-1">{product.name}</h3>
                   <p className="text-luxury-gold font-medium">${product.price.toLocaleString()}</p>

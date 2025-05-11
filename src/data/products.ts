@@ -5,6 +5,7 @@ export interface Product {
   price: number;
   description: string;
   category: string;
+  brand?: string;
   image: string;
   images: string[];
   isNew?: boolean;
@@ -14,6 +15,36 @@ export interface Product {
   material: string;
   madeIn: string;
 }
+
+// Added new categories and brands inspired by negosiodelux.store
+export const categories = [
+  { id: 'all', name: 'All Products' },
+  { id: 'handbags', name: 'Handbags' },
+  { id: 'accessories', name: 'Accessories' },
+  { id: 'wallets', name: 'Wallets' },
+  { id: 'collections', name: 'Collections' },
+  { id: 'footwear', name: 'Footwear' },
+  { id: 'clothing', name: 'Clothing' },
+  { id: 'tshirts', name: 'T-shirts' },
+  { id: 'jeans', name: 'Jeans' },
+  { id: 'luggage', name: 'Luggage' }
+];
+
+export const brands = [
+  { id: 'all', name: 'All Brands' },
+  { id: 'zegna', name: 'ZEGNA' },
+  { id: 'loro-piana', name: 'Loro Piana' },
+  { id: 'louis-vuitton', name: 'Louis Vuitton' },
+  { id: 'dior', name: 'Dior' },
+  { id: 'gucci', name: 'Gucci' },
+  { id: 'prada', name: 'Prada' },
+  { id: 'hermes', name: 'Hermès' },
+  { id: 'dolce-gabbana', name: 'Dolce & Gabbana' },
+  { id: 'givenchy', name: 'Givenchy' },
+  { id: 'fendi', name: 'Fendi' },
+  { id: 'loewe', name: 'Loewe' },
+  { id: 'armani', name: 'Armani' }
+];
 
 export const products: Product[] = [
   {
@@ -225,5 +256,196 @@ export const products: Product[] = [
     dimensions: "18 × 10 × 5 cm",
     material: "Exotic leather with crystal embellishments",
     madeIn: "France"
+  },
+  // New products inspired by negosiodelux.store
+  {
+    id: 21,
+    name: "ZEGNA TRIPLE STITCH",
+    price: 2400,
+    description: "Experience the luxurious world of Zegna Collection with these Triple Stitch shoes. Quality craftsmanship meets timeless style in this elegant footwear option.",
+    category: "footwear",
+    brand: "zegna",
+    image: "https://images.pexels.com/photos/19090/pexels-photo.jpg",
+    images: [
+      "https://images.pexels.com/photos/19090/pexels-photo.jpg",
+      "https://images.pexels.com/photos/267320/pexels-photo-267320.jpeg",
+      "https://images.pexels.com/photos/292999/pexels-photo-292999.jpeg"
+    ],
+    isNew: true,
+    color: "Black",
+    dimensions: "EU 42",
+    material: "Premium leather",
+    madeIn: "Italy"
+  },
+  {
+    id: 22,
+    name: "ZEGNA BASKETS TRIPLE STITCH™ SECONDSKIN BLEU",
+    price: 2400,
+    description: "Discover the luxurious Zegna Triple Stitch™ Secondskin in a stunning deep teal blue. Combining comfort with sophisticated design, these baskets are perfect for the modern gentleman.",
+    category: "footwear",
+    brand: "zegna",
+    image: "https://images.pexels.com/photos/267301/pexels-photo-267301.jpeg",
+    images: [
+      "https://images.pexels.com/photos/267301/pexels-photo-267301.jpeg",
+      "https://images.pexels.com/photos/1598505/pexels-photo-1598505.jpeg",
+      "https://images.pexels.com/photos/1240892/pexels-photo-1240892.jpeg"
+    ],
+    isNew: true,
+    color: "Dark Teal Blue",
+    dimensions: "EU 43",
+    material: "Premium leather with Secondskin technology",
+    madeIn: "Italy"
+  },
+  {
+    id: 23,
+    name: "Loro Piana Summer Walk Loafer",
+    price: 2099,
+    description: "Discover our exclusive Loro Piana Summer Walk Loafer collection featuring superior quality mocassins. These iconic loafers combine comfort and elegance for a sophisticated casual look.",
+    category: "footwear",
+    brand: "loro-piana",
+    image: "https://images.pexels.com/photos/2562992/pexels-photo-2562992.png",
+    images: [
+      "https://images.pexels.com/photos/2562992/pexels-photo-2562992.png",
+      "https://images.pexels.com/photos/267242/pexels-photo-267242.jpeg",
+      "https://images.pexels.com/photos/293406/pexels-photo-293406.jpeg"
+    ],
+    isBestSeller: true,
+    color: "Beige",
+    dimensions: "EU 42",
+    material: "Premium suede",
+    madeIn: "Italy"
+  },
+  {
+    id: 24,
+    name: "Louis Vuitton Signature Estate Major Loafer",
+    price: 2400,
+    description: "The Louis Vuitton Signature Estate Major Loafer combines timeless elegance with modern design. Crafted with precision and care, these loafers feature the iconic LV signature detailing.",
+    category: "footwear",
+    brand: "louis-vuitton",
+    image: "https://images.pexels.com/photos/186035/pexels-photo-186035.jpeg",
+    images: [
+      "https://images.pexels.com/photos/186035/pexels-photo-186035.jpeg",
+      "https://images.pexels.com/photos/1159670/pexels-photo-1159670.jpeg",
+      "https://images.pexels.com/photos/292999/pexels-photo-292999.jpeg"
+    ],
+    isNew: false,
+    color: "Brown",
+    dimensions: "EU 42",
+    material: "Premium leather with LV monogram",
+    madeIn: "France"
+  },
+  {
+    id: 25,
+    name: "TSHIRT DOLCE GABBANA",
+    price: 650,
+    description: "This premium Dolce & Gabbana t-shirt features exceptional quality materials and iconic design elements. Add a touch of luxury to your casual wardrobe with this sophisticated piece.",
+    category: "tshirts",
+    brand: "dolce-gabbana",
+    image: "https://images.pexels.com/photos/1656684/pexels-photo-1656684.jpeg",
+    images: [
+      "https://images.pexels.com/photos/1656684/pexels-photo-1656684.jpeg",
+      "https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg",
+      "https://images.pexels.com/photos/1183266/pexels-photo-1183266.jpeg"
+    ],
+    isNew: true,
+    color: "Black",
+    dimensions: "Standard fit",
+    material: "100% Premium cotton",
+    madeIn: "Italy"
+  },
+  {
+    id: 26,
+    name: "TSHIRT DIOR",
+    price: 650,
+    description: "Ce t-shirt Dior vous offre un style intemporel avec une qualité de fabrication exceptionnelle. Fabriqué à partir de matériaux de haute qualité, il offre un confort et une durabilité incomparables. Avec son design élégant et emblématique, ce t-shirt vous permettra de vous démarquer avec un look raffiné.",
+    category: "tshirts",
+    brand: "dior",
+    image: "https://images.pexels.com/photos/2881785/pexels-photo-2881785.jpeg",
+    images: [
+      "https://images.pexels.com/photos/2881785/pexels-photo-2881785.jpeg",
+      "https://images.pexels.com/photos/2881789/pexels-photo-2881789.jpeg",
+      "https://images.pexels.com/photos/1926769/pexels-photo-1926769.jpeg"
+    ],
+    isNew: false,
+    color: "White",
+    dimensions: "Slim fit",
+    material: "Premium cotton blend",
+    madeIn: "France"
+  },
+  {
+    id: 27,
+    name: "Valise Horizon 55",
+    price: 7200,
+    description: "La valise cabine Horizon 55 associe du cuir grainé noir à des finitions métalliques également noires. Extrêmement fonctionnelle grâce à ses quatre doubles roues compactes et à sa grande poignée permettant de la manier aisément, elle séduit par sa grande capacité intérieure. Ce modèle de la collection Aerogram est sublimé par les LV Initiales emblématiques ton sur ton disposées à l'avant sur le coin inférieur.",
+    category: "luggage",
+    brand: "louis-vuitton",
+    image: "https://images.pexels.com/photos/2421374/pexels-photo-2421374.jpeg",
+    images: [
+      "https://images.pexels.com/photos/2421374/pexels-photo-2421374.jpeg",
+      "https://images.pexels.com/photos/5417837/pexels-photo-5417837.jpeg",
+      "https://images.pexels.com/photos/1008155/pexels-photo-1008155.jpeg"
+    ],
+    isNew: true,
+    color: "Black",
+    dimensions: "55 × 39 × 21 cm",
+    material: "Grained leather with metal accents",
+    madeIn: "France"
+  },
+  {
+    id: 28,
+    name: "Givenchy Jeans",
+    price: 649,
+    description: "Elevate your style with these premium Givenchy jeans. Combining luxurious materials with impeccable design, these jeans offer both comfort and a sophisticated aesthetic.",
+    category: "jeans",
+    brand: "givenchy",
+    image: "https://images.pexels.com/photos/1082529/pexels-photo-1082529.jpeg",
+    images: [
+      "https://images.pexels.com/photos/1082529/pexels-photo-1082529.jpeg",
+      "https://images.pexels.com/photos/52518/jeans-pants-blue-shop-52518.jpeg",
+      "https://images.pexels.com/photos/1598507/pexels-photo-1598507.jpeg"
+    ],
+    isNew: false,
+    color: "Dark Blue",
+    dimensions: "Slim fit",
+    material: "Premium denim with stretch",
+    madeIn: "Italy"
+  },
+  {
+    id: 29,
+    name: "FENDI ROMA JEANS",
+    price: 649,
+    description: "Experience luxury with these FENDI ROMA JEANS. Made with premium denim and featuring the iconic Fendi detailing, these jeans combine comfort with high fashion sensibility.",
+    category: "jeans",
+    brand: "fendi",
+    image: "https://images.pexels.com/photos/1346187/pexels-photo-1346187.jpeg",
+    images: [
+      "https://images.pexels.com/photos/1346187/pexels-photo-1346187.jpeg",
+      "https://images.pexels.com/photos/934063/pexels-photo-934063.jpeg",
+      "https://images.pexels.com/photos/981619/pexels-photo-981619.jpeg"
+    ],
+    isNew: true,
+    color: "Medium Blue",
+    dimensions: "Regular fit",
+    material: "Premium denim with FENDI branding",
+    madeIn: "Italy"
+  },
+  {
+    id: 30,
+    name: "JACKET PRADA",
+    price: 3200,
+    description: "Cette veste Prada noire de luxe offre un confort inégalé pour les amateurs de mode. Fabriquée avec des matériaux de haute qualité, elle est à la fois élégante et pratique. Son design intemporel vous permet de la porter pour une variété d'occasions, ajoutant une touche de sophistication à n'importe quelle tenue.",
+    category: "clothing",
+    brand: "prada",
+    image: "https://images.pexels.com/photos/6770028/pexels-photo-6770028.jpeg",
+    images: [
+      "https://images.pexels.com/photos/6770028/pexels-photo-6770028.jpeg",
+      "https://images.pexels.com/photos/15851562/pexels-photo-15851562/free-photo-of-homme-mode-costume-luxe.jpeg",
+      "https://images.pexels.com/photos/16170/pexels-photo.jpg"
+    ],
+    isNew: true,
+    color: "Black",
+    dimensions: "Standard fit",
+    material: "Premium wool and nylon blend",
+    madeIn: "Italy"
   }
 ];

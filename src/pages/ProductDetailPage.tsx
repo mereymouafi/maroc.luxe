@@ -1,57 +1,73 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
-import { ChevronRight, Minus, Plus, Heart, ShoppingBag, Share2 } from 'lucide-react';
+import { Minus, Plus, Share, Heart, Check, ShoppingBag, ChevronRight, X } from 'lucide-react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination } from 'swiper/modules';
 
-// Import products data
-import { products, Product } from '../data/products';
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+
+// Import products data (in a real app, this would come from an API)
+import { products, brands } from '../data/products';
 
 const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [selectedImage, setSelectedImage] = useState<string>('');
+  const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
-  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-
+  const [addedToCart, setAddedToCart] = useState(false);
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
+  const [activeTab, setActiveTab] = useState('description');
+  const [selectedImage, setSelectedImage] = useState(0);
+  
+  // Find the product
+  const product = products.find(p => p.id === parseInt(id || '0'));
+  
+  // Get brand name if available
+  const brandName = product?.brand ? 
+    brands.find(b => b.id === product.brand)?.name : null;
+  
+  // Redirect if product not found
   useEffect(() => {
-    // Find the product by ID
-    const productId = parseInt(id || '0');
-    const foundProduct = products.find(p => p.id === productId) || null;
-    
-    if (foundProduct) {
-      setProduct(foundProduct);
-      setSelectedImage(foundProduct.image);
-      
-      // Find related products (same category, excluding current product)
-      const related = products
-        .filter(p => p.category === foundProduct.category && p.id !== foundProduct.id)
-        .slice(0, 4);
-      
-      setRelatedProducts(related);
+    if (!product && id) {
+      navigate('/not-found');
     }
-    
-    // Scroll to top when product changes
-    window.scrollTo(0, 0);
-  }, [id]);
+  }, [product, id, navigate]);
 
-  const handleQuantityChange = (delta: number) => {
-    const newQuantity = quantity + delta;
-    if (newQuantity >= 1 && newQuantity <= 10) {
+  if (!product) {
+    return null;
+  }
+
+  const handleQuantityChange = (change: number) => {
+    const newQuantity = quantity + change;
+    if (newQuantity > 0 && newQuantity <= 10) {
       setQuantity(newQuantity);
     }
   };
 
-  if (!product) {
-    return (
-      <div className="container py-20 text-center">
-        <p className="text-luxury-gray">Product not found.</p>
-        <Link to="/shop" className="btn btn-primary mt-4">
-          Return to Shop
-        </Link>
-      </div>
-    );
-  }
+  const handleAddToCart = () => {
+    // In a real app, this would dispatch to a state management system
+    console.log(`Added ${quantity} of ${product.name} to cart`);
+    setAddedToCart(true);
+    
+    // Reset the "Added" confirmation after 3 seconds
+    setTimeout(() => {
+      setAddedToCart(false);
+    }, 3000);
+  };
+
+  const handleQuickBuy = () => {
+    // In a real app, this would add to cart and redirect to checkout
+    console.log(`Quick buy ${quantity} of ${product.name}`);
+    navigate('/cart');
+  };
+
+  const toggleSizeGuide = () => {
+    setShowSizeGuide(!showSizeGuide);
+  };
 
   return (
     <>
@@ -77,194 +93,360 @@ const ProductDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Product Details */}
       <section className="py-12">
         <div className="container">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Product Images */}
             <div>
-              <div className="aspect-square overflow-hidden mb-4">
-                <motion.img 
-                  key={selectedImage}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5 }}
-                  src={selectedImage} 
-                  alt={product.name} 
-                  className="w-full h-full object-cover"
-                />
+              <div className="relative">
+                <Swiper
+                  modules={[Navigation, Pagination]}
+                  navigation
+                  pagination={{ clickable: true }}
+                  className="product-swiper"
+                  onSlideChange={(swiper) => setSelectedImage(swiper.activeIndex)}
+                >
+                  {product.images.map((image, index) => (
+                    <SwiperSlide key={index}>
+                      <div className="aspect-square">
+                        <img 
+                          src={image} 
+                          alt={`${product.name} - Image ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+
+                {/* Product status badges */}
+                <div className="absolute top-4 left-4 z-10 flex flex-col space-y-2">
+                  {product.isNew && (
+                    <div className="bg-luxury-gold px-3 py-1 text-xs text-luxury-black font-medium">
+                      New
+                    </div>
+                  )}
+                  {product.isBestSeller && (
+                    <div className="bg-luxury-black px-3 py-1 text-xs text-white font-medium">
+                      Best Seller
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="grid grid-cols-4 gap-4">
-                {product.images.map((img, index) => (
-                  <button
+
+              {/* Thumbnail previews */}
+              <div className="flex space-x-2 mt-4">
+                {product.images.map((image, index) => (
+                  <div
                     key={index}
-                    onClick={() => setSelectedImage(img)}
-                    className={`aspect-square overflow-hidden border-2 ${selectedImage === img ? 'border-luxury-gold' : 'border-transparent'}`}
+                    className={`cursor-pointer border-2 ${
+                      selectedImage === index ? 'border-luxury-gold' : 'border-transparent'
+                    }`}
+                    onClick={() => setSelectedImage(index)}
                   >
                     <img 
-                      src={img} 
-                      alt={`${product.name} view ${index + 1}`} 
-                      className="w-full h-full object-cover"
+                      src={image} 
+                      alt={`Thumbnail ${index + 1}`}
+                      className="w-16 h-16 object-cover"
                     />
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>
 
-            {/* Product Info */}
+            {/* Product Details */}
             <div>
-              <h1 className="text-3xl md:text-4xl font-serif text-luxury-black mb-3">{product.name}</h1>
-              <p className="text-2xl text-luxury-gold font-medium mb-6">${product.price.toLocaleString()}</p>
+              {/* Brand if available */}
+              {brandName && (
+                <div className="text-sm text-luxury-gray uppercase tracking-wider mb-2">
+                  {brandName}
+                </div>
+              )}
               
+              <h1 className="text-3xl font-serif text-luxury-black mb-4">
+                {product.name}
+              </h1>
+              
+              <div className="text-xl text-luxury-gold font-medium mb-6">
+                ${product.price.toLocaleString()}
+              </div>
+
               <div className="mb-8">
-                <p className="text-luxury-gray mb-6">{product.description}</p>
-                
-                <div className="space-y-3 mb-6">
-                  <div className="flex">
-                    <span className="w-32 text-luxury-black font-medium">Color:</span>
-                    <span className="text-luxury-gray">{product.color}</span>
-                  </div>
-                  <div className="flex">
-                    <span className="w-32 text-luxury-black font-medium">Dimensions:</span>
-                    <span className="text-luxury-gray">{product.dimensions}</span>
-                  </div>
-                  <div className="flex">
-                    <span className="w-32 text-luxury-black font-medium">Material:</span>
-                    <span className="text-luxury-gray">{product.material}</span>
-                  </div>
-                  <div className="flex">
-                    <span className="w-32 text-luxury-black font-medium">Made in:</span>
-                    <span className="text-luxury-gray">{product.madeIn}</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Add to Cart */}
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <div className="border border-luxury-gray flex items-center mr-4">
-                    <button 
-                      onClick={() => handleQuantityChange(-1)}
-                      className="px-3 py-2 text-luxury-black"
-                      disabled={quantity <= 1}
-                    >
-                      <Minus size={18} />
-                    </button>
-                    <span className="w-10 text-center">{quantity}</span>
-                    <button 
-                      onClick={() => handleQuantityChange(1)}
-                      className="px-3 py-2 text-luxury-black"
-                      disabled={quantity >= 10}
-                    >
-                      <Plus size={18} />
-                    </button>
-                  </div>
-                  
-                  <button className="btn btn-primary flex-grow">
-                    <ShoppingBag size={18} className="mr-2" />
-                    Add to Bag
-                  </button>
-                </div>
-                
-                <div className="flex space-x-4">
-                  <button className="btn btn-secondary flex-1">
-                    <Heart size={18} className="mr-2" />
-                    Add to Wishlist
-                  </button>
-                  <button className="btn btn-secondary flex-1">
-                    <Share2 size={18} className="mr-2" />
-                    Share
-                  </button>
-                </div>
-              </div>
-              
-              {/* Shipping Info */}
-              <div className="mt-8 pt-8 border-t border-gray-200">
-                <h3 className="text-luxury-black font-medium mb-3">Shipping & Returns</h3>
-                <p className="text-luxury-gray text-sm mb-2">
-                  Free standard shipping on all orders over $200.
-                </p>
-                <p className="text-luxury-gray text-sm">
-                  Returns accepted within 14 days of delivery. See our <Link to="/returns" className="text-luxury-gold hover:underline">return policy</Link> for details.
+                <p className="text-luxury-gray mb-4">
+                  {product.description}
                 </p>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Product Details Tabs */}
-      <section className="py-12 bg-luxury-cream">
-        <div className="container">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-serif text-luxury-black mb-6 text-center">Product Details</h2>
-            
-            <div className="bg-white p-8">
-              <h3 className="text-xl font-serif text-luxury-black mb-4">Description</h3>
-              <p className="text-luxury-gray mb-6">
-                {product.description}
-              </p>
-              
-              <h3 className="text-xl font-serif text-luxury-black mb-4">Materials & Care</h3>
-              <p className="text-luxury-gray mb-4">
-                Crafted from {product.material.toLowerCase()}, this exquisite piece represents the pinnacle of luxury craftsmanship. Each item is meticulously created by our skilled artisans in {product.madeIn}.
-              </p>
-              <p className="text-luxury-gray mb-4">
-                To maintain its beauty and quality, we recommend:
-              </p>
-              <ul className="list-disc pl-5 text-luxury-gray space-y-2 mb-6">
-                <li>Store in the provided dust bag when not in use</li>
-                <li>Avoid exposure to direct sunlight, heat, moisture, and abrasive surfaces</li>
-                <li>Clean with a soft, dry cloth</li>
-                <li>For specific stains, consult a professional leather cleaner</li>
-              </ul>
-              
-              <h3 className="text-xl font-serif text-luxury-black mb-4">Dimensions</h3>
-              <p className="text-luxury-gray">
-                {product.dimensions}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Related Products */}
-      {relatedProducts.length > 0 && (
-        <section className="py-16">
-          <div className="container">
-            <h2 className="text-2xl md:text-3xl font-serif text-luxury-black text-center mb-10">You May Also Like</h2>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedProducts.map((product, index) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                  className="group product-card-hover"
-                >
-                  <Link to={`/product/${product.id}`} className="block">
-                    <div className="relative aspect-square overflow-hidden mb-4">
-                      <img 
-                        src={product.image} 
-                        alt={product.name} 
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
-                      {product.isNew && (
-                        <div className="absolute top-3 left-3 bg-luxury-gold text-luxury-black px-3 py-1 text-xs font-medium">
-                          New
-                        </div>
+              <div className="space-y-6 mb-8">
+                {/* Color */}
+                <div>
+                  <div className="text-sm font-medium text-luxury-black mb-2">Color: {product.color}</div>
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className={`w-8 h-8 rounded-full border-2 border-luxury-gold flex items-center justify-center`}
+                      style={{ backgroundColor: product.color.toLowerCase() === 'black' ? '#000' : 
+                                               product.color.toLowerCase() === 'white' ? '#fff' :
+                                               product.color.toLowerCase() === 'cream' ? '#f5f5dc' :
+                                               product.color.toLowerCase() === 'burgundy' ? '#800020' :
+                                               product.color.toLowerCase() === 'navy blue' ? '#000080' :
+                                               product.color.toLowerCase() === 'brown' ? '#964B00' :
+                                               product.color.toLowerCase() === 'tan' ? '#D2B48C' :
+                                               product.color.toLowerCase() === 'gold' ? '#FFD700' :
+                                               product.color.toLowerCase() === 'dark blue' ? '#00008B' :
+                                               product.color.toLowerCase() === 'medium blue' ? '#0000CD' :
+                                               '#ccc' }}
+                    >
+                      {product.color.toLowerCase() !== 'black' && product.color.toLowerCase() !== 'burgundy' && 
+                       product.color.toLowerCase() !== 'navy blue' && (
+                        <Check size={16} className="text-luxury-black" />
+                      )}
+                      {(product.color.toLowerCase() === 'black' || product.color.toLowerCase() === 'burgundy' || 
+                        product.color.toLowerCase() === 'navy blue') && (
+                        <Check size={16} className="text-white" />
                       )}
                     </div>
-                    <h3 className="font-serif text-luxury-black text-lg mb-1">{product.name}</h3>
-                    <p className="text-luxury-gold font-medium">${product.price.toLocaleString()}</p>
-                  </Link>
-                </motion.div>
-              ))}
+                  </div>
+                </div>
+
+                {/* Product Features */}
+                <div className="space-y-2">
+                  <div className="flex">
+                    <div className="w-24 text-sm text-luxury-gray">Material:</div>
+                    <div className="text-sm">{product.material}</div>
+                  </div>
+                  <div className="flex">
+                    <div className="w-24 text-sm text-luxury-gray">Dimensions:</div>
+                    <div className="text-sm">{product.dimensions}</div>
+                  </div>
+                  <div className="flex">
+                    <div className="w-24 text-sm text-luxury-gray">Made in:</div>
+                    <div className="text-sm">{product.madeIn}</div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Quantity selector */}
+              <div className="mb-6">
+                <div className="text-sm font-medium text-luxury-black mb-2">Quantity</div>
+                <div className="flex items-center border border-luxury-gray inline-block">
+                  <button 
+                    onClick={() => handleQuantityChange(-1)}
+                    className="px-4 py-2 text-luxury-black focus:outline-none"
+                    disabled={quantity <= 1}
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <span className="px-4 py-2 border-x border-luxury-gray">{quantity}</span>
+                  <button 
+                    onClick={() => handleQuantityChange(1)}
+                    className="px-4 py-2 text-luxury-black focus:outline-none"
+                    disabled={quantity >= 10}
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Add to Cart & Buy Now buttons */}
+              <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 mb-8">
+                <button
+                  onClick={handleAddToCart}
+                  className={`flex-1 py-3 px-6 flex items-center justify-center focus:outline-none transition-colors duration-300 ${
+                    addedToCart 
+                      ? 'bg-green-600 text-white' 
+                      : 'bg-luxury-black text-white hover:bg-luxury-black/90'
+                  }`}
+                >
+                  {addedToCart ? (
+                    <>
+                      <Check size={20} className="mr-2" />
+                      Added to Cart
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag size={20} className="mr-2" />
+                      Add to Cart
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleQuickBuy}
+                  className="flex-1 py-3 px-6 bg-luxury-gold text-luxury-black hover:bg-luxury-gold/90 focus:outline-none transition-colors duration-300"
+                >
+                  Quick Buy
+                </button>
+              </div>
+
+              {/* Wishlist and Share */}
+              <div className="flex space-x-6 mb-8">
+                <button className="flex items-center text-luxury-gray hover:text-luxury-black">
+                  <Heart size={18} className="mr-2" />
+                  <span className="text-sm">Add to Wishlist</span>
+                </button>
+                <button className="flex items-center text-luxury-gray hover:text-luxury-black">
+                  <Share size={18} className="mr-2" />
+                  <span className="text-sm">Share</span>
+                </button>
+              </div>
+
+              {/* Tabbed content */}
+              <div className="border-t border-b border-luxury-gray py-6">
+                <div className="flex border-b">
+                  <button
+                    className={`py-2 px-4 text-sm font-medium relative ${
+                      activeTab === 'description' 
+                        ? 'text-luxury-black' 
+                        : 'text-luxury-gray hover:text-luxury-black'
+                    }`}
+                    onClick={() => setActiveTab('description')}
+                  >
+                    Description
+                    {activeTab === 'description' && (
+                      <motion.div
+                        layoutId="activeTab"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-luxury-gold"
+                      />
+                    )}
+                  </button>
+                  <button
+                    className={`py-2 px-4 text-sm font-medium relative ${
+                      activeTab === 'shipping' 
+                        ? 'text-luxury-black' 
+                        : 'text-luxury-gray hover:text-luxury-black'
+                    }`}
+                    onClick={() => setActiveTab('shipping')}
+                  >
+                    Shipping & Returns
+                    {activeTab === 'shipping' && (
+                      <motion.div
+                        layoutId="activeTab"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-luxury-gold"
+                      />
+                    )}
+                  </button>
+                  <button
+                    className={`py-2 px-4 text-sm font-medium relative ${
+                      activeTab === 'care' 
+                        ? 'text-luxury-black' 
+                        : 'text-luxury-gray hover:text-luxury-black'
+                    }`}
+                    onClick={() => setActiveTab('care')}
+                  >
+                    Care Instructions
+                    {activeTab === 'care' && (
+                      <motion.div
+                        layoutId="activeTab"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-luxury-gold"
+                      />
+                    )}
+                  </button>
+                </div>
+                
+                <div className="pt-4">
+                  {activeTab === 'description' && (
+                    <div className="text-luxury-gray">
+                      <p>{product.description}</p>
+                      <p className="mt-2">
+                        Each {product.name.toLowerCase()} is crafted with care and attention to detail, 
+                        ensuring a product of exceptional quality and durability.
+                      </p>
+                    </div>
+                  )}
+                  
+                  {activeTab === 'shipping' && (
+                    <div className="text-luxury-gray">
+                      <p>Free standard shipping on all orders over $300.</p>
+                      <p className="mt-2">Delivery typically takes 3-5 business days depending on your location.</p>
+                      <p className="mt-2">Returns accepted within 14 days of delivery for unused items in original packaging.</p>
+                    </div>
+                  )}
+                  
+                  {activeTab === 'care' && (
+                    <div className="text-luxury-gray">
+                      <p>To maintain the beauty of your {product.name.toLowerCase()}, we recommend:</p>
+                      <ul className="list-disc pl-4 mt-2 space-y-1">
+                        <li>Store in the provided dust bag when not in use</li>
+                        <li>Avoid exposure to direct sunlight and moisture</li>
+                        <li>Clean with a soft, dry cloth</li>
+                        <li>For leather items, apply a leather conditioner every 6 months</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        </section>
+
+          {/* Related Products */}
+          <div className="mt-16">
+            <h2 className="text-2xl font-serif text-luxury-black mb-8">You May Also Like</h2>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {products
+                .filter(p => 
+                  p.id !== product.id && 
+                  (p.category === product.category || p.brand === product.brand)
+                )
+                .slice(0, 4)
+                .map(relatedProduct => (
+                  <div key={relatedProduct.id} className="group product-card-hover">
+                    <Link to={`/product/${relatedProduct.id}`} className="block">
+                      <div className="relative aspect-square overflow-hidden mb-4">
+                        <img 
+                          src={relatedProduct.image} 
+                          alt={relatedProduct.name} 
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <button className="btn btn-gold w-full text-sm py-2">
+                            Quick View
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Brand if available */}
+                      {relatedProduct.brand && (
+                        <div className="uppercase text-xs text-luxury-gray tracking-wider mb-1">
+                          {brands.find(b => b.id === relatedProduct.brand)?.name}
+                        </div>
+                      )}
+                      
+                      <h3 className="font-serif text-luxury-black text-lg mb-1 truncate">
+                        {relatedProduct.name}
+                      </h3>
+                      <p className="text-luxury-gold font-medium">
+                        ${relatedProduct.price.toLocaleString()}
+                      </p>
+                    </Link>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Size Guide Modal */}
+      {showSizeGuide && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={toggleSizeGuide}></div>
+          <div className="relative min-h-screen flex items-center justify-center p-4">
+            <div className="relative bg-white p-6 max-w-2xl w-full">
+              <button
+                onClick={toggleSizeGuide}
+                className="absolute top-4 right-4 text-luxury-gray hover:text-luxury-black"
+              >
+                <X size={24} />
+              </button>
+              <h2 className="text-2xl font-serif text-luxury-black mb-4">Size Guide</h2>
+              <div className="mt-4">
+                {/* Size guide content would go here */}
+                <p className="text-luxury-gray">
+                  This would contain specific sizing information for the product.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
