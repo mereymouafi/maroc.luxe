@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Minus, Plus, ShoppingBag, Check } from 'lucide-react';
 
 import { Product, brands } from '../../data/products';
+import { CartContext } from '../../context/CartContext';
 
 interface QuickViewModalProps {
   product: Product | null;
@@ -15,10 +16,32 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [sizeError, setSizeError] = useState(false);
+  
+  // Get cart context
+  const { addToCart } = useContext(CartContext);
   
   // Get brand name if available
   const brandName = product?.brand ? 
     brands.find(b => b.id === product.brand)?.name : null;
+  
+  // Reset state when product changes
+  useEffect(() => {
+    if (product) {
+      setQuantity(1);
+      setSelectedImage(0);
+      setIsAddingToCart(false);
+      setSizeError(false);
+      
+      // Set default size for footwear
+      if (product.category === 'footwear' && product.sizes && product.sizes.length > 0) {
+        setSelectedSize(product.sizes[2]); // Default to size 42 (index 2)
+      } else {
+        setSelectedSize(null);
+      }
+    }
+  }, [product]);
   
   const handleQuantityChange = (change: number) => {
     const newQuantity = quantity + change;
@@ -28,8 +51,27 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
   };
 
   const handleAddToCart = () => {
-    // In a real app, this would dispatch to a state management system
-    console.log(`Added ${quantity} of ${product?.name} to cart`);
+    // Make sure we have a product
+    if (!product) return;
+    
+    // Check if size is selected for footwear
+    if (product.category === 'footwear' && !selectedSize) {
+      setSizeError(true);
+      return;
+    }
+    
+    // Add to cart context
+    addToCart({
+      id: Date.now(), // Generate a unique ID for the cart item
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: quantity,
+      image: product.image,
+      brand: product.brand,
+      size: selectedSize
+    });
+    
     setIsAddingToCart(true);
     
     // Reset the "Added" confirmation after 2 seconds
@@ -115,7 +157,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
                   </h2>
                   
                   <div className="text-xl text-luxury-gold font-medium mb-4">
-                    ${product.price.toLocaleString()}
+                    {product.price.toLocaleString()} MAD
                   </div>
                   
                   <div className="mb-6">
@@ -127,6 +169,36 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
                       View Full Details
                     </Link>
                   </div>
+                  
+                  {/* Size selector for footwear */}
+                  {product.category === 'footwear' && product.sizes && (
+                    <div className="mb-6">
+                      <div className="text-sm font-medium text-luxury-black mb-2">Size</div>
+                      <div className="flex flex-wrap gap-2">
+                        {product.sizes.map((size) => (
+                          <button
+                            key={size}
+                            className={`w-12 h-10 border ${
+                              selectedSize === size 
+                                ? 'border-luxury-gold bg-luxury-gold/10 text-luxury-black' 
+                                : 'border-gray-300 hover:border-gray-400 text-luxury-gray'
+                            }`}
+                            onClick={() => {
+                              setSelectedSize(size);
+                              setSizeError(false);
+                            }}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                      {sizeError && (
+                        <div className="mt-2 text-sm text-red-500">
+                          Please select a size
+                        </div>
+                      )}
+                    </div>
+                  )}
                   
                   <div className="space-y-4 mb-6">
                     <div className="flex">

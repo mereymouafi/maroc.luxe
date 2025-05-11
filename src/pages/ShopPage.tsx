@@ -191,10 +191,10 @@ const ShopPage: React.FC = () => {
                       <span className="ml-2 text-luxury-gray">All Prices</span>
                     </label>
                     {[
-                      { label: 'Under $1,000', value: '0-1000' },
-                      { label: '$1,000 - $2,000', value: '1000-2000' },
-                      { label: '$2,000 - $5,000', value: '2000-5000' },
-                      { label: 'Over $5,000', value: '5000-' },
+                      { label: 'Under 1,000 MAD', value: '0-1000' },
+                      { label: '1,000 - 2,000 MAD', value: '1000-2000' },
+                      { label: '2,000 - 5,000 MAD', value: '2000-5000' },
+                      { label: 'Over 5,000 MAD', value: '5000-' },
                     ].map(range => (
                       <label key={range.value} className="flex items-center">
                         <input
@@ -296,10 +296,10 @@ const ShopPage: React.FC = () => {
                       <span className="ml-2 text-luxury-gray">All Prices</span>
                     </label>
                     {[
-                      { label: 'Under $1,000', value: '0-1000' },
-                      { label: '$1,000 - $2,000', value: '1000-2000' },
-                      { label: '$2,000 - $5,000', value: '2000-5000' },
-                      { label: 'Over $5,000', value: '5000-' },
+                      { label: 'Under 1,000 MAD', value: '0-1000' },
+                      { label: '1,000 - 2,000 MAD', value: '1000-2000' },
+                      { label: '2,000 - 5,000 MAD', value: '2000-5000' },
+                      { label: 'Over 5,000 MAD', value: '5000-' },
                     ].map(range => (
                       <label key={range.value} className="flex items-center">
                         <input
@@ -429,7 +429,7 @@ const ShopPage: React.FC = () => {
                       )}
                       
                       <h3 className="font-serif text-luxury-black text-lg mb-1">{product.name}</h3>
-                      <p className="text-luxury-gold font-medium">${product.price.toLocaleString()}</p>
+                      <p className="text-luxury-gold font-medium">{product.price.toLocaleString()} MAD</p>
                     </motion.div>
                   ))}
                 </div>

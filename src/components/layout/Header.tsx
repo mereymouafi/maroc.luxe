@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, User, Menu, X } from 'lucide-react';
 import Logo from '../common/Logo';
+import { CartContext } from '../../context/CartContext';
 
 interface HeaderProps {
   scrolled: boolean;
@@ -12,6 +13,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ scrolled, onOpenSearch, onOpenAuth }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { cartCount } = useContext(CartContext);
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
@@ -82,9 +84,11 @@ const Header: React.FC<HeaderProps> = ({ scrolled, onOpenSearch, onOpenAuth }) =
             aria-label="Shopping bag"
           >
             <ShoppingBag size={20} />
-            <span className="absolute -top-1 -right-1 bg-luxury-gold text-luxury-black w-4 h-4 rounded-full text-xs flex items-center justify-center">
-              0
-            </span>
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-luxury-gold text-luxury-black w-5 h-5 rounded-full text-xs flex items-center justify-center font-medium">
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            )}
           </button>
         </div>
       </div>

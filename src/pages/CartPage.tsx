@@ -1,71 +1,28 @@
-import React, { useState } from 'react';
+import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Trash2, X, CreditCard, ShoppingBag, Check } from 'lucide-react';
 
-// Import brands data
-import { brands } from '../data/products';
+// Import CartContext
+import { CartContext } from '../context/CartContext';
 
-// For demo purposes - in a real app this would be managed by a state management library
-const initialCartItems = [
-  {
-    id: 1,
-    productId: 1,
-    name: "Classic Tote Bag",
-    price: 1950,
-    quantity: 1,
-    image: "https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg",
-    brand: "louis-vuitton"
-  },
-  {
-    id: 2,
-    productId: 5,
-    name: "Luxury Leather Wallet",
-    price: 650,
-    quantity: 1,
-    image: "https://images.pexels.com/photos/2252360/pexels-photo-2252360.jpeg",
-    brand: "gucci" 
-  },
-  {
-    id: 3,
-    productId: 21,
-    name: "ZEGNA TRIPLE STITCH",
-    price: 2400,
-    quantity: 1,
-    image: "https://images.pexels.com/photos/19090/pexels-photo.jpg",
-    brand: "zegna"
-  }
-];
+// Import brands data
+import { brands, products } from '../data/products';
 
 const CartPage: React.FC = () => {
-  const [cartItems, setCartItems] = useState(initialCartItems);
-  const [promoCode, setPromoCode] = useState('');
-  const [promoError, setPromoError] = useState<string | null>(null);
-  const [promoSuccess, setPromoSuccess] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState('card');
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  // Use cart context
+  const { cartItems, updateQuantity, removeFromCart } = useContext(CartContext);
+  const [promoCode, setPromoCode] = React.useState('');
+  const [promoError, setPromoError] = React.useState<string | null>(null);
+  const [promoSuccess, setPromoSuccess] = React.useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = React.useState('card');
+  const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
 
   // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const shipping = subtotal > 1000 ? 0 : 25; // Free shipping over $1000
   const discount = promoSuccess ? Math.round(subtotal * 0.1) : 0; // 10% discount
   const total = subtotal + shipping - discount;
-
-  // Update item quantity
-  const updateQuantity = (id: number, newQuantity: number) => {
-    if (newQuantity < 1 || newQuantity > 10) return;
-    
-    setCartItems(prev => 
-      prev.map(item => 
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
-
-  // Remove item from cart
-  const removeItem = (id: number) => {
-    setCartItems(prev => prev.filter(item => item.id !== id));
-  };
 
   // Apply promo code
   const applyPromoCode = () => {
@@ -100,6 +57,12 @@ const CartPage: React.FC = () => {
   const getBrandName = (brandId: string | undefined) => {
     if (!brandId) return null;
     return brands.find(b => b.id === brandId)?.name;
+  };
+
+  // Get product category
+  const getProductCategory = (productId: number) => {
+    const product = products.find(p => p.id === productId);
+    return product?.category || '';
   };
 
   return (
@@ -166,8 +129,16 @@ const CartPage: React.FC = () => {
                             >
                               {item.name}
                             </Link>
+                            
+                            {/* Display size for footwear */}
+                            {getProductCategory(item.productId) === 'footwear' && item.size && (
+                              <div className="text-sm text-luxury-gray mt-1">
+                                Size: {item.size}
+                              </div>
+                            )}
+                            
                             <button
-                              onClick={() => removeItem(item.id)}
+                              onClick={() => removeFromCart(item.id)}
                               className="flex items-center text-sm text-luxury-gray hover:text-luxury-gold transition-colors mt-2"
                             >
                               <Trash2 size={14} className="mr-1" />
@@ -179,7 +150,7 @@ const CartPage: React.FC = () => {
                         {/* Price */}
                         <div className="md:col-span-2 flex justify-between md:justify-center">
                           <span className="md:hidden">Price:</span>
-                          <span className="text-luxury-black">${item.price.toLocaleString()}</span>
+                          <span className="text-luxury-black">{item.price.toLocaleString()} MAD</span>
                         </div>
 
                         {/* Quantity */}
@@ -208,7 +179,7 @@ const CartPage: React.FC = () => {
                         <div className="md:col-span-2 flex justify-between md:justify-end">
                           <span className="md:hidden">Total:</span>
                           <span className="text-luxury-black font-medium">
-                            ${(item.price * item.quantity).toLocaleString()}
+                            {(item.price * item.quantity).toLocaleString()} MAD
                           </span>
                         </div>
                       </div>
@@ -260,27 +231,27 @@ const CartPage: React.FC = () => {
                   <div className="space-y-4 mb-6">
                     <div className="flex justify-between">
                       <span className="text-luxury-gray">Subtotal</span>
-                      <span className="text-luxury-black">${subtotal.toLocaleString()}</span>
+                      <span className="text-luxury-black">{subtotal.toLocaleString()} MAD</span>
                     </div>
                     
                     <div className="flex justify-between">
                       <span className="text-luxury-gray">Shipping</span>
                       <span className="text-luxury-black">
-                        {shipping === 0 ? 'Free' : `$${shipping.toLocaleString()}`}
+                        {shipping === 0 ? 'Free' : `${shipping.toLocaleString()} MAD`}
                       </span>
                     </div>
                     
                     {discount > 0 && (
                       <div className="flex justify-between">
                         <span className="text-luxury-gray">Discount</span>
-                        <span className="text-green-600">-${discount.toLocaleString()}</span>
+                        <span className="text-green-600">-{discount.toLocaleString()} MAD</span>
                       </div>
                     )}
                     
                     <div className="pt-4 border-t border-gray-200">
                       <div className="flex justify-between font-medium">
                         <span className="text-luxury-black">Total</span>
-                        <span className="text-luxury-gold">${total.toLocaleString()}</span>
+                        <span className="text-luxury-gold">{total.toLocaleString()} MAD</span>
                       </div>
                     </div>
                   </div>

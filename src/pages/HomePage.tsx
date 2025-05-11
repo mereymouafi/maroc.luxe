@@ -178,7 +178,7 @@ const HomePage: React.FC = () => {
                     {product.brand}
                   </div>
                   <h3 className="font-serif text-luxury-black text-lg mb-1">{product.name}</h3>
-                  <p className="text-luxury-gold font-medium">${product.price.toLocaleString()}</p>
+                  <p className="text-luxury-gold font-medium">{product.price.toLocaleString()} MAD</p>
                 </Link>
               </motion.div>
             ))}

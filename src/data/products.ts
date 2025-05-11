@@ -14,6 +14,7 @@ export interface Product {
   dimensions: string;
   material: string;
   madeIn: string;
+  sizes?: string[];
 }
 
 // Added new categories and brands inspired by negosiodelux.store
@@ -275,7 +276,8 @@ export const products: Product[] = [
     color: "Black",
     dimensions: "EU 42",
     material: "Premium leather",
-    madeIn: "Italy"
+    madeIn: "Italy",
+    sizes: ["40", "41", "42", "43", "44", "45"]
   },
   {
     id: 22,
@@ -294,7 +296,8 @@ export const products: Product[] = [
     color: "Dark Teal Blue",
     dimensions: "EU 43",
     material: "Premium leather with Secondskin technology",
-    madeIn: "Italy"
+    madeIn: "Italy",
+    sizes: ["40", "41", "42", "43", "44", "45"]
   },
   {
     id: 23,
@@ -313,7 +316,8 @@ export const products: Product[] = [
     color: "Beige",
     dimensions: "EU 42",
     material: "Premium suede",
-    madeIn: "Italy"
+    madeIn: "Italy",
+    sizes: ["40", "41", "42", "43", "44", "45"]
   },
   {
     id: 24,
@@ -332,7 +336,8 @@ export const products: Product[] = [
     color: "Brown",
     dimensions: "EU 42",
     material: "Premium leather with LV monogram",
-    madeIn: "France"
+    madeIn: "France",
+    sizes: ["40", "41", "42", "43", "44", "45"]
   },
   {
     id: 25,

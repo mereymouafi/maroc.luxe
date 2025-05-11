@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
@@ -14,6 +14,9 @@ import 'swiper/css/pagination';
 // Import products data (in a real app, this would come from an API)
 import { products, brands } from '../data/products';
 
+// Import CartContext (we'll create this next)
+import { CartContext } from '../context/CartContext';
+
 const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -22,6 +25,11 @@ const ProductDetailPage: React.FC = () => {
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [activeTab, setActiveTab] = useState('description');
   const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [sizeError, setSizeError] = useState(false);
+  
+  // Get cart context
+  const { addToCart } = useContext(CartContext);
   
   // Find the product
   const product = products.find(p => p.id === parseInt(id || '0'));
@@ -37,6 +45,16 @@ const ProductDetailPage: React.FC = () => {
     }
   }, [product, id, navigate]);
 
+  // Set default size when product changes
+  useEffect(() => {
+    if (product?.sizes && product.sizes.length > 0) {
+      setSelectedSize(product.sizes[2]); // Default to size 42 (index 2)
+    } else {
+      setSelectedSize(null);
+    }
+    setSizeError(false);
+  }, [product]);
+
   if (!product) {
     return null;
   }
@@ -49,8 +67,27 @@ const ProductDetailPage: React.FC = () => {
   };
 
   const handleAddToCart = () => {
+    // Check if size is selected for footwear
+    if (product.category === 'footwear' && !selectedSize) {
+      setSizeError(true);
+      return;
+    }
+    
     // In a real app, this would dispatch to a state management system
     console.log(`Added ${quantity} of ${product.name} to cart`);
+    
+    // Add to cart context
+    addToCart({
+      id: Date.now(), // Generate a unique ID for the cart item
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: quantity,
+      image: product.image,
+      brand: product.brand,
+      size: selectedSize
+    });
+    
     setAddedToCart(true);
     
     // Reset the "Added" confirmation after 3 seconds
@@ -60,8 +97,14 @@ const ProductDetailPage: React.FC = () => {
   };
 
   const handleQuickBuy = () => {
-    // In a real app, this would add to cart and redirect to checkout
-    console.log(`Quick buy ${quantity} of ${product.name}`);
+    // Check if size is selected for footwear
+    if (product.category === 'footwear' && !selectedSize) {
+      setSizeError(true);
+      return;
+    }
+    
+    // Add to cart and redirect to checkout
+    handleAddToCart();
     navigate('/cart');
   };
 
@@ -168,7 +211,7 @@ const ProductDetailPage: React.FC = () => {
               </h1>
               
               <div className="text-xl text-luxury-gold font-medium mb-6">
-                ${product.price.toLocaleString()}
+                {product.price.toLocaleString()} MAD
               </div>
 
               <div className="mb-8">
@@ -207,6 +250,44 @@ const ProductDetailPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Size selector for footwear */}
+                {product.category === 'footwear' && product.sizes && (
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="text-sm font-medium text-luxury-black">Size</div>
+                      <button 
+                        onClick={toggleSizeGuide}
+                        className="text-xs text-luxury-gold underline"
+                      >
+                        Size Guide
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {product.sizes.map((size) => (
+                        <button
+                          key={size}
+                          className={`w-12 h-10 border ${
+                            selectedSize === size 
+                              ? 'border-luxury-gold bg-luxury-gold/10 text-luxury-black' 
+                              : 'border-gray-300 hover:border-gray-400 text-luxury-gray'
+                          }`}
+                          onClick={() => {
+                            setSelectedSize(size);
+                            setSizeError(false);
+                          }}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                    {sizeError && (
+                      <div className="mt-2 text-sm text-red-500">
+                        Please select a size
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Product Features */}
                 <div className="space-y-2">
@@ -415,7 +496,7 @@ const ProductDetailPage: React.FC = () => {
                         {relatedProduct.name}
                       </h3>
                       <p className="text-luxury-gold font-medium">
-                        ${relatedProduct.price.toLocaleString()}
+                        {relatedProduct.price.toLocaleString()} MAD
                       </p>
                     </Link>
                   </div>
@@ -439,9 +520,56 @@ const ProductDetailPage: React.FC = () => {
               </button>
               <h2 className="text-2xl font-serif text-luxury-black mb-4">Size Guide</h2>
               <div className="mt-4">
-                {/* Size guide content would go here */}
-                <p className="text-luxury-gray">
-                  This would contain specific sizing information for the product.
+                <table className="min-w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="border border-gray-300 px-4 py-2">EU Size</th>
+                      <th className="border border-gray-300 px-4 py-2">UK Size</th>
+                      <th className="border border-gray-300 px-4 py-2">US Size</th>
+                      <th className="border border-gray-300 px-4 py-2">Foot Length (cm)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="border border-gray-300 px-4 py-2 text-center">40</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">6.5</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">7.5</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">25.5</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-gray-300 px-4 py-2 text-center">41</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">7</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">8</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">26.2</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-gray-300 px-4 py-2 text-center">42</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">8</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">9</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">26.8</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-gray-300 px-4 py-2 text-center">43</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">9</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">10</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">27.5</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-gray-300 px-4 py-2 text-center">44</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">10</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">11</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">28.2</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-gray-300 px-4 py-2 text-center">45</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">10.5</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">11.5</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">28.8</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p className="mt-4 text-luxury-gray text-sm">
+                  To find your perfect size, measure your foot length and compare it with the chart above. If you are between sizes, we recommend going up to the larger size.
                 </p>
               </div>
             </div>
