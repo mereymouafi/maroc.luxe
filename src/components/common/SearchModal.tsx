@@ -584,6 +584,66 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
 
+            {/* Popular Products Section */}
+            {!searchQuery && (
+              <div className="py-12 border-t border-gray-200">
+                <h3 className="text-center uppercase text-base mb-8" 
+                  style={{ 
+                    letterSpacing: '1px',
+                    fontFamily: "'LV Clemence', 'Futura Medium', Georgia, serif"
+                  }}
+                >
+                  Produits Populaires
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 px-4">
+                  {products.slice(0, 5).map((product, index) => (
+                    <div 
+                      key={`popular-${product.id}-${index}`}
+                      className="group relative cursor-pointer"
+                      onClick={() => {
+                        navigate(`/product/${product.id}`);
+                        onClose();
+                      }}
+                    >
+                      {/* Favorite button */}
+                      <button 
+                        className="absolute right-2 top-2 z-10 w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Add favorite functionality
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                        </svg>
+                      </button>
+                      
+                      {/* Product image */}
+                      <div className="mb-2">
+                        <div className="aspect-square bg-gray-50">
+                          <img 
+                            src={product.image} 
+                            alt={product.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Product info */}
+                      <div>
+                        <p className="text-xs text-gray-900 font-light leading-tight mb-1 line-clamp-2">
+                          {product.name}
+                        </p>
+                        <p className="text-xs text-gray-900">
+                          {product.price.toLocaleString()} MAD
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Results section */}
             {searchQuery.trim() !== '' && !isSearching && (
               <>
