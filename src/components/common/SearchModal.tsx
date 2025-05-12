@@ -29,8 +29,12 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
   const [autoNavigateTimeout, setAutoNavigateTimeout] = useState<number | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [placeholderKey, setPlaceholderKey] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const productNames = products.map(p => p.name);
 
   // Focus input on open
   useEffect(() => {
@@ -59,6 +63,19 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
       }
     }
   }, []);
+
+  // Animated placeholder effect
+  useEffect(() => {
+    if (!isOpen) return;
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => {
+        const next = (prev + 1) % productNames.length;
+        setPlaceholderKey(next); // trigger animation
+        return next;
+      });
+    }, 2000); // Changed to 2 seconds
+    return () => clearInterval(interval);
+  }, [isOpen, productNames.length]);
 
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -402,18 +419,20 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
             
             {/* Brand Header */}
             <div className="text-center mb-5">
-              <h2 className="text-2xl font-normal uppercase tracking-widest">
+              <h2 className="text-2xl font-normal uppercase tracking-widest"
+                style={{ fontFamily: "'LV Clemence', 'Futura Medium', Georgia, serif" }}
+              >
                 {matchedBrand || "MAROC LUXE"}
               </h2>
             </div>
 
-              {/* Search input and buttons - Always visible */}
-            <div className="max-w-xl mx-auto mb-5 relative">
-              <form onSubmit={handleSearch} className="relative flex items-center border border-gray-300 rounded-full overflow-hidden">
-                <div className="flex-shrink-0 pl-3">
+            {/* Search input and buttons - Always visible */}
+            <div className="max-w-4xl mx-auto mb-5 relative">
+              <form onSubmit={handleSearch} className={`relative flex items-center border transition-colors duration-300 ${isInputFocused ? 'border-black' : 'border-gray-300'} rounded-full overflow-hidden bg-white shadow-sm`}>
+                <div className="flex-shrink-0 pl-4">
                       {isSearching ? (
                     <Loader size={16} className="text-gray-500" />
-                  ) : (
+                      ) : (
                     <Search size={16} className="text-gray-500" onClick={handleSearchIconClick} />
                       )}
                     </div>
@@ -422,25 +441,54 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                       type="text"
                       value={searchQuery}
                       onChange={handleSearchChange}
-                  onFocus={() => {
-                    setIsFocused(true);
-                    if (searchQuery.trim().length > 0) {
-                      setShowSuggestions(true);
-                    }
-                  }}
-                  onBlur={() => setTimeout(() => {
-                    setIsFocused(false);
-                    setShowSuggestions(false);
-                  }, 200)}
-                  placeholder="Rechercher"
-                  className="flex-grow py-2 px-3 text-sm focus:outline-none"
+                  onFocus={() => setIsInputFocused(true)}
+                  onBlur={() => setIsInputFocused(false)}
+                  placeholder=" "
+                  className="flex-grow py-3 px-4 text-base focus:outline-none bg-transparent rounded-full placeholder-gray-400 w-full"
                       autoComplete="off"
-                    />
+                  style={{ 
+                    fontFamily: "'Futura', 'Lato', sans-serif", 
+                    fontWeight: 400, 
+                    letterSpacing: '0.3px',
+                    fontSize: '15px'
+                  }}
+                />
+                {/* Animated placeholder overlay with fixed "Search" text and animated product names */}
+                {!searchQuery && (
+                  <div className="absolute left-12 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none select-none flex items-center"
+                    style={{ 
+                      fontFamily: "'Futura', 'Lato', sans-serif", 
+                      fontWeight: 400, 
+                      letterSpacing: '0.3px',
+                      fontSize: '15px'
+                    }}
+                  >
+                    <span>Search </span>
+                    <div className="relative h-[20px] overflow-hidden mx-[1px]" style={{ display: 'inline-block', minWidth: '120px' }}>
+                      <AnimatePresence mode="wait">
+                        <motion.span
+                          key={placeholderKey}
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          exit={{ y: -20, opacity: 0 }}
+                          transition={{ duration: 0.7, ease: "easeInOut" }}
+                          style={{ display: 'block', whiteSpace: 'nowrap', fontFamily: "'Futura', 'Lato', sans-serif" }}
+                        >
+                          "{productNames[placeholderIndex]}"
+                        </motion.span>
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                )}
                 {searchQuery.trim() && (
                   <button 
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    className="flex-shrink-0 px-3 py-2 text-xs text-gray-500"
+                    className="flex-shrink-0 px-4 py-1 text-base text-gray-500 focus:outline-none"
+                    style={{ 
+                      fontFamily: "'Futura', 'Lato', sans-serif", 
+                      fontWeight: 400 
+                    }}
                   >
                     Effacer
                   </button>
@@ -502,14 +550,19 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
 
             {/* Popular searches - Always visible */}
             <div className="max-w-3xl mx-auto mb-8 text-center">
-              <p className="uppercase text-xs tracking-wider text-gray-500 mb-2">Recherches Populaires</p>
-              <div className="flex flex-wrap justify-center gap-4">
+              <p className="uppercase text-xs tracking-wider text-gray-500 mb-3" 
+                style={{ 
+                  letterSpacing: '1px',
+                  fontFamily: "'LV Sans', 'Futura Medium', Georgia, serif"
+                }}
+              >RECHERCHES POPULAIRES</p>
+              <div className="flex flex-wrap justify-center gap-8">
                 {[
-                  { name: 'Handbags', id: 'handbags' },
-                  { name: 'Accessories', id: 'accessories' },
-                  { name: 'Wallets', id: 'wallets' },
-                  { name: 'Collections', id: 'collections' },
-                  { name: 'Footwear', id: 'footwear' }
+                  { name: 'SPEEDY', id: 'speedy' },
+                  { name: 'POCHETTE', id: 'pochette' },
+                  { name: 'NEVERFULL', id: 'neverfull' },
+                  { name: 'BRACELET', id: 'bracelet' },
+                  { name: 'PORTEFEUILLE', id: 'portefeuille' }
                 ].map(category => (
                   <button 
                     key={category.id}
@@ -519,7 +572,11 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                       getInstantResults(category.name);
                       setShowSuggestions(false);
                     }}
-                    className="text-sm hover:underline"
+                    className="text-sm uppercase hover:underline tracking-wider"
+                    style={{ 
+                      letterSpacing: '1px', 
+                      fontFamily: "'LV Clemence', 'Futura Medium', Georgia, serif" 
+                    }}
                   >
                     {category.name}
                   </button>
@@ -541,7 +598,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                       <button 
                         onClick={toggleFilters}
                         className="flex items-center gap-1 border border-gray-300 rounded-full px-4 py-1.5 text-sm"
-                      >
+                        >
                         <span>Filtrer</span> <SlidersHorizontal size={14} />
                       </button>
                     </div>
@@ -549,13 +606,13 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                     {/* Filter panel */}
                     <AnimatePresence>
                       {showFilters && (
-                        <motion.div 
+                  <motion.div 
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
                           transition={{ duration: 0.3 }}
                           className="bg-white border border-gray-200 rounded-md p-4 mb-4 overflow-hidden"
-                        >
+                  >
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {/* Category Filter */}
                             <div>
@@ -610,8 +667,8 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                                     <input type="radio" id={`brand-${brand}`} name="brand" className="mr-2" />
                                     <label htmlFor={`brand-${brand}`} className="text-sm">{brand}</label>
                                   </div>
-                                ))}
-                              </div>
+                      ))}
+                    </div>
                             </div>
 
                             {/* Price Range Filter */}
@@ -647,17 +704,17 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                             </button>
                           </div>
                         </motion.div>
-                      )}
+                        )}
                     </AnimatePresence>
 
                     {/* Products grid */}
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-                      {instantResults.map((result, index) => (
+                              {instantResults.map((result, index) => (
                         <div 
                           key={`product-${result.id}-${index}`}
                           className="group relative cursor-pointer"
-                          onClick={() => handleSuggestionClick(result)}
-                        >
+                                  onClick={() => handleSuggestionClick(result)}
+                                >
                           {/* Favorite button */}
                           <button 
                             className="absolute right-1 top-1 z-10 w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -674,40 +731,40 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                           {/* Product image */}
                           <div className="mb-1">
                             <div className="text-xs text-gray-500 mb-0.5">Nouveau</div>
-                            {result.image && (
+                                  {result.image && (
                               <div className="aspect-square bg-gray-50">
                                 <img 
-                                  src={result.image} 
-                                  alt={result.name} 
+                                        src={result.image} 
+                                        alt={result.name} 
                                   className="w-full h-full object-cover"
-                                />
-                              </div>
-                            )}
+                                      />
+                                    </div>
+                                  )}
                           </div>
                           
                           {/* Product info */}
-                          <div>
+                                  <div>
                             <p className="text-xs text-gray-900 font-light leading-tight mb-0.5 line-clamp-2">
-                              {result.name}
-                            </p>
-                            {result.price && (
+                                      {result.name}
+                                    </p>
+                                    {result.price && (
                               <p className="text-xs text-gray-900">
-                                {result.price.toLocaleString()} MAD
-                              </p>
-                            )}
-                          </div>
+                                        {result.price.toLocaleString()} MAD
+                                      </p>
+                                    )}
+                                  </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                              ))}
+                            </div>
+                          </div>
                 ) : (
                   <div className="text-center py-8 border-t border-gray-200 mt-4">
                     <p className="text-sm mb-2">No results found for "{searchQuery}"</p>
                     <p className="text-xs text-gray-500">Try checking your spelling or use more general terms</p>
-                  </div>
-                )}
+                          </div>
+                        )}
               </>
-            )}
+                    )}
 
             {/* Loading state */}
             {searchQuery.trim() !== '' && isSearching && (
@@ -716,7 +773,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                 <p className="text-sm text-gray-500">Searching...</p>
               </div>
             )}
-          </div>
+            </div>
         </motion.div>
       )}
     </AnimatePresence>
