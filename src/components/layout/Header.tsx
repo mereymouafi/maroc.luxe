@@ -1,16 +1,15 @@
 import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingBag, User, Menu, X } from 'lucide-react';
+import { Search, ShoppingBag, Menu, X } from 'lucide-react';
 import Logo from '../common/Logo';
 import { CartContext } from '../../context/CartContext';
 
 interface HeaderProps {
   scrolled: boolean;
   onOpenSearch: () => void;
-  onOpenAuth: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ scrolled, onOpenSearch, onOpenAuth }) => {
+const Header: React.FC<HeaderProps> = ({ scrolled, onOpenSearch }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { cartCount } = useContext(CartContext);
@@ -72,13 +71,6 @@ const Header: React.FC<HeaderProps> = ({ scrolled, onOpenSearch, onOpenAuth }) =
             <Search size={20} />
           </button>
           <button
-            onClick={onOpenAuth}
-            className="text-luxury-black hover:text-luxury-gold transition-colors"
-            aria-label="Account"
-          >
-            <User size={20} />
-          </button>
-          <button
             onClick={handleCartClick}
             className="text-luxury-black hover:text-luxury-gold transition-colors relative"
             aria-label="Shopping bag"
@@ -130,17 +122,6 @@ const Header: React.FC<HeaderProps> = ({ scrolled, onOpenSearch, onOpenAuth }) =
               Contact
             </Link>
           </nav>
-          <div className="mt-auto">
-            <button 
-              className="btn btn-primary w-full"
-              onClick={() => {
-                toggleMenu();
-                onOpenAuth();
-              }}
-            >
-              Sign In / Register
-            </button>
-          </div>
         </div>
       </div>
     </header>

@@ -4,11 +4,9 @@ import Header from './Header';
 import Footer from './Footer';
 import SearchModal from '../common/SearchModal';
 import { motion } from 'framer-motion';
-import AuthModal from '../auth/AuthModal';
 
 const Layout: React.FC = () => {
   const [searchOpen, setSearchOpen] = useState(false);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
@@ -28,8 +26,6 @@ const Layout: React.FC = () => {
   useEffect(() => {
     // Close search overlay when location changes
     setSearchOpen(false);
-    // Close auth modal when location changes
-    setAuthModalOpen(false);
     // Scroll to top when navigating
     window.scrollTo(0, 0);
   }, [location]);
@@ -39,7 +35,6 @@ const Layout: React.FC = () => {
       <Header 
         scrolled={scrolled} 
         onOpenSearch={() => setSearchOpen(true)} 
-        onOpenAuth={() => setAuthModalOpen(true)} 
       />
       <main className="flex-grow">
         <motion.div
@@ -56,7 +51,6 @@ const Layout: React.FC = () => {
       
       {/* Overlay components */}
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
-      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </div>
   );
 };
