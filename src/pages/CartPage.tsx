@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Trash2, X, CreditCard, ShoppingBag, Check } from 'lucide-react';
+import { Trash2, X, CreditCard, ShoppingBag, Check, DollarSign } from 'lucide-react';
 
 // Import CartContext
 import { CartContext } from '../context/CartContext';
@@ -48,8 +48,17 @@ const CartPage: React.FC = () => {
     // Simulate payment processing
     setTimeout(() => {
       setIsProcessingPayment(false);
+      
+      // Show different messages based on payment method
+      if (paymentMethod === 'cod') {
+        alert('Order placed successfully! You will pay upon delivery.');
+      } else if (paymentMethod === 'paypal') {
+        alert('Redirecting to PayPal for payment...');
+      } else {
+        alert('Payment processed successfully!');
+      }
+      
       // In a real app, you would redirect to order confirmation page
-      alert('Payment processed successfully!');
     }, 2000);
   };
 
@@ -292,6 +301,21 @@ const CartPage: React.FC = () => {
                           <div className="w-12 h-4 bg-blue-700 rounded"></div>
                         </div>
                       </label>
+
+                      <label className="flex items-center p-3 border border-luxury-gray rounded-sm cursor-pointer">
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="cod"
+                          checked={paymentMethod === 'cod'}
+                          onChange={() => setPaymentMethod('cod')}
+                          className="h-4 w-4 border-luxury-gray text-luxury-gold focus:ring-luxury-gold"
+                        />
+                        <span className="ml-2">Cash On Delivery (COD)</span>
+                        <div className="ml-auto">
+                          <div className="w-6 h-4 bg-green-600 rounded"></div>
+                        </div>
+                      </label>
                     </div>
                   </div>
                   
@@ -315,7 +339,9 @@ const CartPage: React.FC = () => {
                       </span>
                     ) : (
                       <>
-                        <CreditCard size={20} className="mr-2" />
+                        {paymentMethod === 'card' && <CreditCard size={20} className="mr-2" />}
+                        {paymentMethod === 'paypal' && <span className="font-bold text-lg mr-2">P</span>}
+                        {paymentMethod === 'cod' && <DollarSign size={20} className="mr-2" />}
                         Proceed to Checkout
                       </>
                     )}
