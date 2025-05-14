@@ -5,10 +5,10 @@ import 'react-datepicker/dist/react-datepicker.css';
 interface FilterBarProps {
   onSearchChange: (query: string) => void;
   onStatusChange: (status: string) => void;
-  onDateChange: (date: Date) => void;
+  onDateChange: (date: Date | null) => void;
   onResetFilters: () => void;
   selectedStatus: string;
-  selectedDate: Date;
+  selectedDate: Date | null;
   searchQuery: string;
 }
 
@@ -75,9 +75,10 @@ const FilterBar: React.FC<FilterBarProps> = ({
           </label>
           <DatePicker
             selected={selectedDate}
-            onChange={(date: Date) => onDateChange(date)}
+            onChange={(date: Date | null) => onDateChange(date)}
             className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md border"
             dateFormat="MMMM d, yyyy"
+            isClearable
           />
         </div>
 

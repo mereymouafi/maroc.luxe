@@ -5,6 +5,8 @@ import OrderTrendsChart from '../components/admin/OrderTrendsChart';
 import FilterBar from '../components/admin/FilterBar';
 import CustomerModal from '../components/admin/CustomerModal';
 import OrdersReport from '../components/admin/OrdersReport';
+import AdminNavbar from '../components/admin/AdminNavbar';
+import { useAuth } from '../context/AuthContext';
 import { Helmet } from 'react-helmet-async';
 import { 
   Order, 
@@ -21,6 +23,11 @@ interface OrderWithItems extends Order {
 }
 
 const OrdersAdminPage: React.FC = () => {
+  // Get the authenticated user from context
+  const { user } = useAuth();
+  
+  // Use the user information for personalization or additional security checks if needed
+  // For example, you could display the user's email in the UI or check their role
   // Main state for orders list and loading state
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [loading, setLoading] = useState(true);
@@ -210,43 +217,46 @@ const OrdersAdminPage: React.FC = () => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50">
       <Helmet>
-        <title>Admin Dashboard - MarocLuxe</title>
+        <title>Orders Admin | Maroc Luxe</title>
       </Helmet>
       
-      <div className="mt-12 pt-8 border-t border-gray-100">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Orders Dashboard</h1>
-      </div>
+      <AdminNavbar />
       
-      {error && (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
-          <p>{error}</p>
+      <div className="container mx-auto px-4 py-4">
+        <div className="mt-12 pt-8 border-t border-gray-100">
+          <h1 className="text-3xl font-bold text-gray-800 mb-6">Orders Dashboard</h1>
         </div>
-      )}
       
-      {/* Daily Summary Stats */}
-      <DailySummary selectedDate={selectedDate} />
-      
-      {/* Orders Report Download */}
-      <OrdersReport selectedDate={selectedDate} />
-      
-      {/* Filters and Search */}
-      <FilterBar 
-        onSearchChange={setSearchQuery}
-        onStatusChange={setSelectedStatus}
-        onDateChange={setSelectedDate}
-        onResetFilters={handleResetFilters}
-        selectedStatus={selectedStatus}
-        selectedDate={selectedDate}
-        searchQuery={searchQuery}
-      />
-      
-      {/* Orders List */}
-      <div className="mb-8 bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-800">Latest Orders</h2>
-        </div>
+        {error && (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+            <p>{error}</p>
+          </div>
+        )}
+        
+        {/* Daily Summary Stats */}
+        <DailySummary selectedDate={selectedDate as Date} />
+        
+        {/* Orders Report Download */}
+        <OrdersReport selectedDate={selectedDate as Date} />
+        
+        {/* Filters and Search */}
+        <FilterBar 
+          onSearchChange={setSearchQuery}
+          onStatusChange={setSelectedStatus}
+          onDateChange={setSelectedDate}
+          onResetFilters={handleResetFilters}
+          selectedStatus={selectedStatus}
+          selectedDate={selectedDate}
+          searchQuery={searchQuery}
+        />
+        
+        {/* Orders List */}
+        <div className="mb-8 bg-white shadow-md rounded-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-800">Latest Orders</h2>
+          </div>
         
         {loading ? (
           <div className="flex justify-center items-center py-8">
@@ -422,18 +432,24 @@ const OrdersAdminPage: React.FC = () => {
             </table>
           </div>
         )}
-      </div>
-      
-      {/* Order Trends Chart */}
-      <div className="mb-8">
-        <OrderTrendsChart />
+        </div>
+        
+        {/* Order Trends Chart */}
+        <div className="mb-8 bg-white shadow-md rounded-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-800">Order Trends</h2>
+          </div>
+          <div className="p-6">
+            <OrderTrendsChart />
+          </div>
+        </div>
       </div>
       
       {/* Customer Modal */}
       <CustomerModal 
-        isOpen={isCustomerModalOpen} 
-        onClose={() => setIsCustomerModalOpen(false)} 
-        customerName={selectedCustomer} 
+        isOpen={isCustomerModalOpen}
+        onClose={() => setIsCustomerModalOpen(false)}
+        customerName={selectedCustomer || ''}
       />
     </div>
   );
