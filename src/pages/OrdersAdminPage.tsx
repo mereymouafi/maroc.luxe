@@ -5,7 +5,6 @@ import OrderTrendsChart from '../components/admin/OrderTrendsChart';
 import FilterBar from '../components/admin/FilterBar';
 import CustomerModal from '../components/admin/CustomerModal';
 import OrdersReport from '../components/admin/OrdersReport';
-import AdminNavbar from '../components/admin/AdminNavbar';
 import { useAuth } from '../context/AuthContext';
 import { Helmet } from 'react-helmet-async';
 import { 
@@ -221,8 +220,6 @@ const OrdersAdminPage: React.FC = () => {
       <Helmet>
         <title>Orders Admin | Maroc Luxe</title>
       </Helmet>
-      
-      <AdminNavbar />
       
       <div className="container mx-auto px-4 py-4">
         <div className="mt-12 pt-8 border-t border-gray-100">
