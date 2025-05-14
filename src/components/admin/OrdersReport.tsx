@@ -4,15 +4,6 @@ import {
   formatDateForFilename,
   getOrdersForDay
 } from '../../lib/orderService';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
-
-// Add type definition for jsPDF with autotable
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
 
 interface OrdersReportProps {
   selectedDate: Date | null;
@@ -150,7 +141,7 @@ const OrdersReport: React.FC<OrdersReportProps> = ({ selectedDate }) => {
     }
   };
 
-  // Download as PDF
+  // Download as PDF (HTML-based approach)
   const handleDownloadPDF = async () => {
     if (!selectedDate) {
       setError('Please select a date to generate the report');
@@ -170,56 +161,122 @@ const OrdersReport: React.FC<OrdersReportProps> = ({ selectedDate }) => {
         return;
       }
       
-      // Create a new PDF document
-      const doc = new jsPDF();
+      // Calculate total revenue
+      const totalRevenue = orders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
       
-      // Add title
-      doc.setFontSize(18);
-      doc.text(`Orders Report - ${selectedDate?.toLocaleDateString()}`, 14, 22);
+      // Create HTML content for the report
+      let htmlContent = `
+        <html>
+        <head>
+          <title>Orders Report - ${selectedDate.toLocaleDateString()}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+            .header { background-color: #4F46E5; color: white; padding: 15px; text-align: center; }
+            .content { padding: 20px; }
+            .summary { background-color: #f0f0f0; padding: 10px; margin-bottom: 20px; border-radius: 4px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th { background-color: #4F46E5; color: white; padding: 8px; text-align: left; }
+            td { padding: 8px; border-bottom: 1px solid #ddd; }
+            tr:nth-child(even) { background-color: #f9fafb; }
+            .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #888; }
+            .status-paid { color: #22c55e; } /* green */
+            .status-pending { color: #eab308; } /* yellow */
+            .status-cancelled { color: #ef4444; } /* red */
+            .status-processing { color: #3b82f6; } /* blue */
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>MarocLuxe</h1>
+            <h2>Daily Orders Report</h2>
+          </div>
+          <div class="content">
+            <h3>Date: ${selectedDate.toLocaleDateString()}</h3>
+            
+            <div class="summary">
+              <p><strong>Total Orders:</strong> ${orders.length}</p>
+              <p><strong>Total Revenue:</strong> ${totalRevenue.toLocaleString()} MAD</p>
+            </div>
+            
+            <table>
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Date</th>
+                  <th>Customer</th>
+                  <th>Phone</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Products</th>
+                </tr>
+              </thead>
+              <tbody>
+      `;
       
-      // Prepare data for PDF table
-      const tableData = orders.map(order => {
+      // Add table rows
+      orders.forEach(order => {
         const items = itemsByOrderId[order.id] || [];
         const productsStr = items.map(item => 
           `${item.name} (${item.size}) x${item.quantity} - ${item.price} MAD`
-        ).join('\n');
+        ).join('<br>');
         
-        return [
-          order.id.substring(0, 8) + '...',
-          new Date(order.created_at).toLocaleString(),
-          order.customer_name,
-          order.phone,
-          `${order.total_amount} MAD`,
-          order.payment_status,
-          productsStr
-        ];
+        // Determine status class
+        let statusClass = '';
+        switch(order.payment_status.toLowerCase()) {
+          case 'paid': statusClass = 'status-paid'; break;
+          case 'pending': statusClass = 'status-pending'; break;
+          case 'cancelled': statusClass = 'status-cancelled'; break;
+          case 'processing': statusClass = 'status-processing'; break;
+        }
+        
+        htmlContent += `
+          <tr>
+            <td>${order.id.substring(0, 8)}...</td>
+            <td>${new Date(order.created_at).toLocaleString()}</td>
+            <td>${order.customer_name}</td>
+            <td>${order.phone}</td>
+            <td>${order.total_amount} MAD</td>
+            <td class="${statusClass}">${order.payment_status}</td>
+            <td>${productsStr}</td>
+          </tr>
+        `;
       });
       
-      // Add table to PDF
-      doc.autoTable({
-        head: [['Order ID', 'Date', 'Customer', 'Phone', 'Amount', 'Status', 'Products']],
-        body: tableData,
-        startY: 30,
-        theme: 'grid',
-        styles: { fontSize: 8, cellPadding: 2 },
-        columnStyles: {
-          0: { cellWidth: 25 },
-          1: { cellWidth: 30 },
-          2: { cellWidth: 25 },
-          3: { cellWidth: 25 },
-          4: { cellWidth: 20 },
-          5: { cellWidth: 20 },
-          6: { cellWidth: 'auto' }
-        },
-        headStyles: { fillColor: [66, 66, 66] }
-      });
+      // Close the HTML
+      htmlContent += `
+              </tbody>
+            </table>
+            
+            <div class="footer">
+              MarocLuxe - Generated on ${new Date().toLocaleString()}
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
       
-      // Save the PDF
-      if (selectedDate) {
-        doc.save(`orders-${formatDateForFilename(selectedDate)}.pdf`);
+      // Create a Blob from the HTML content
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      
+      // Create a download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `orders-${formatDateForFilename(selectedDate)}.html`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      // Open the report in a new tab for printing
+      const printWindow = window.open(url, '_blank');
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+        };
       }
     } catch (err) {
-      console.error('Failed to download PDF report:', err);
+      console.error('Failed to generate HTML report:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -297,7 +354,7 @@ const OrdersReport: React.FC<OrdersReportProps> = ({ selectedDate }) => {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span>PDF</span>
+                <span>Print Report</span>
               </>
             )}
           </button>
