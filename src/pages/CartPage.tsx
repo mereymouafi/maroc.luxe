@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Trash2, X, CreditCard, ShoppingBag, Check, DollarSign } from 'lucide-react';
 
@@ -41,25 +41,28 @@ const CartPage: React.FC = () => {
     }
   };
 
-  // Simulate checkout process
+  // Navigate to checkout page
+  const navigate = useNavigate();
+  
   const handleCheckout = () => {
-    setIsProcessingPayment(true);
-    
-    // Simulate payment processing
-    setTimeout(() => {
-      setIsProcessingPayment(false);
+    // If COD is selected, go to our new Checkout page
+    if (paymentMethod === 'cod') {
+      navigate('/checkout');
+    } else {
+      // For other payment methods, show message (these would be implemented separately)
+      setIsProcessingPayment(true);
       
-      // Show different messages based on payment method
-      if (paymentMethod === 'cod') {
-        alert('Order placed successfully! You will pay upon delivery.');
-      } else if (paymentMethod === 'paypal') {
-        alert('Redirecting to PayPal for payment...');
-      } else {
-        alert('Payment processed successfully!');
-      }
-      
-      // In a real app, you would redirect to order confirmation page
-    }, 2000);
+      // Simulate payment processing
+      setTimeout(() => {
+        setIsProcessingPayment(false);
+        
+        if (paymentMethod === 'paypal') {
+          alert('Redirecting to PayPal for payment... (Not implemented in this demo)');
+        } else {
+          alert('Credit card payments not implemented in this demo. Please use Cash on Delivery option.');
+        }
+      }, 1000);
+    }
   };
 
   // Get brand name function

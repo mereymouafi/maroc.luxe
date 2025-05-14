@@ -8,6 +8,8 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import CartPage from './pages/CartPage';
+import Checkout from './pages/Checkout';
+import OrderConfirmation from './pages/OrderConfirmation';
 import NotFoundPage from './pages/NotFoundPage';
 import SearchResultsPage from './pages/SearchResultsPage';
 import { CartProvider } from './context/CartContext';
@@ -25,6 +27,8 @@ function App() {
             <Route path="about" element={<AboutPage />} />
             <Route path="contact" element={<ContactPage />} />
             <Route path="cart" element={<CartPage />} />
+            <Route path="checkout" element={<Checkout />} />
+            <Route path="order-confirmation/:orderId" element={<OrderConfirmation />} />
             <Route path="search" element={<SearchResultsPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
