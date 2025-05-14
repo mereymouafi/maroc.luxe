@@ -1,4 +1,4 @@
-import React from 'react';
+// React is imported for JSX support in the component tree
 import { Routes, Route } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Layout from './components/layout/Layout';
@@ -10,6 +10,7 @@ import ContactPage from './pages/ContactPage';
 import CartPage from './pages/CartPage';
 import Checkout from './pages/Checkout';
 import OrderConfirmation from './pages/OrderConfirmation';
+import OrdersAdminPage from './pages/OrdersAdminPage';
 import NotFoundPage from './pages/NotFoundPage';
 import SearchResultsPage from './pages/SearchResultsPage';
 import { CartProvider } from './context/CartContext';
@@ -30,6 +31,7 @@ function App() {
             <Route path="checkout" element={<Checkout />} />
             <Route path="order-confirmation/:orderId" element={<OrderConfirmation />} />
             <Route path="search" element={<SearchResultsPage />} />
+            <Route path="admin/orders" element={<OrdersAdminPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
