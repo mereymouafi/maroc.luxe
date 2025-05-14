@@ -347,3 +347,137 @@ const formatDate = (date: Date): string => {
   const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
   return date.toLocaleDateString('en-US', options);
 };
+
+/**
+ * Helper function to format a date as YYYY-MM-DD
+ */
+export const formatDateForFilename = (date: Date | null): string => {
+  if (!date) return 'no-date';
+  return date.toISOString().split('T')[0];
+};
+
+/**
+ * Get orders with items for a specific day
+ */
+export const getOrdersForDay = async (date: Date | null): Promise<{ 
+  orders: Order[] | null, 
+  itemsByOrderId: Record<string, OrderItem[]> | null,
+  error: any 
+}> => {
+  try {
+    if (!date) {
+      return { orders: null, itemsByOrderId: null, error: 'No date provided' };
+    }
+    
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    // Get orders for this day
+    const { data: orders, error } = await supabase
+      .from('orders')
+      .select('*')
+      .gte('created_at', startOfDay.toISOString())
+      .lte('created_at', endOfDay.toISOString())
+      .order('created_at', { ascending: true });
+    
+    if (error || !orders || orders.length === 0) {
+      return { orders: null, itemsByOrderId: null, error: error || 'No orders found for this date' };
+    }
+    
+    // Fetch all order items for these orders
+    const orderIds = orders.map(order => order.id);
+    const { data: orderItems, error: itemsError } = await supabase
+      .from('order_items')
+      .select('*')
+      .in('order_id', orderIds);
+    
+    if (itemsError) {
+      return { orders, itemsByOrderId: null, error: itemsError };
+    }
+    
+    // Group items by order_id for easier access
+    const itemsByOrderId: Record<string, OrderItem[]> = {};
+    orderItems?.forEach(item => {
+      if (!itemsByOrderId[item.order_id]) {
+        itemsByOrderId[item.order_id] = [];
+      }
+      itemsByOrderId[item.order_id].push(item);
+    });
+    
+    return { orders, itemsByOrderId, error: null };
+  } catch (error) {
+    console.error('Error fetching orders for day:', error);
+    return { orders: null, itemsByOrderId: null, error };
+  }
+};
+
+/**
+ * Generate a downloadable daily orders report in CSV format
+ */
+export const generateDailyOrdersCSV = async (date: Date | null): Promise<{ data: string, error: any }> => {
+  try {
+    const { orders, itemsByOrderId, error } = await getOrdersForDay(date);
+    
+    if (error || !orders || !itemsByOrderId) {
+      return { data: '', error: error || 'Failed to generate report' };
+    }
+    
+    // Generate CSV header
+    let csv = 'Order ID,Date,Customer Name,Phone,Address,Total Amount,Payment Method,Payment Status,Products\n';
+    
+    // Generate CSV rows
+    orders.forEach(order => {
+      const orderDate = new Date(order.created_at).toLocaleString();
+      const items = itemsByOrderId[order.id] || [];
+      
+      // Format products as a single string with product details
+      const productsStr = items.map(item => 
+        `${item.name} (${item.size}) x${item.quantity} - ${item.price} MAD`
+      ).join(' | ');
+      
+      // Create CSV row with escaped values to handle commas in text
+      const row = [
+        order.id,
+        orderDate,
+        `"${order.customer_name || ''}"`,
+        `"${order.phone || ''}"`,
+        `"${order.address || ''}"`,
+        order.total_amount,
+        order.payment_method,
+        order.payment_status,
+        `"${productsStr}"`
+      ].join(',');
+      
+      csv += row + '\n';
+    });
+    
+    return { data: csv, error: null };
+  } catch (error) {
+    console.error('Error generating CSV report:', error);
+    return { data: '', error };
+  }
+};
+
+/**
+ * Generate a downloadable daily orders report in Excel format
+ * This returns a base64 string that can be used to create a Blob
+ */
+export const generateDailyOrdersExcel = async (date: Date | null): Promise<{ data: string, error: any }> => {
+  try {
+    // We'll use the CSV data and convert it to Excel format on the client side
+    // using the xlsx library that will be imported in the component
+    const { data: csvData, error } = await generateDailyOrdersCSV(date);
+    
+    if (error || !csvData) {
+      return { data: '', error: error || 'Failed to generate Excel report' };
+    }
+    
+    return { data: csvData, error: null };
+  } catch (error) {
+    console.error('Error generating Excel report:', error);
+    return { data: '', error };
+  }
+};

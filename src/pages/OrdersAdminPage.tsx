@@ -4,6 +4,7 @@ import DailySummary from '../components/admin/DailySummary';
 import OrderTrendsChart from '../components/admin/OrderTrendsChart';
 import FilterBar from '../components/admin/FilterBar';
 import CustomerModal from '../components/admin/CustomerModal';
+import OrdersReport from '../components/admin/OrdersReport';
 import { Helmet } from 'react-helmet-async';
 import { 
   Order, 
@@ -224,6 +225,9 @@ const OrdersAdminPage: React.FC = () => {
       
       {/* Daily Summary Stats */}
       <DailySummary selectedDate={selectedDate} />
+      
+      {/* Orders Report Download */}
+      <OrdersReport selectedDate={selectedDate} />
       
       {/* Filters and Search */}
       <FilterBar 
