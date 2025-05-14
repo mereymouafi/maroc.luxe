@@ -131,29 +131,219 @@ export const updateOrderStatus = async (
  * Get all orders with optional filtering
  */
 export const getOrders = async (
-  options?: { 
-    status?: string, 
-    limit?: number, 
-    offset?: number 
-  }
+  options: { status?: string, limit?: number, offset?: number } = {}
 ): Promise<{ 
   data: Order[] | null, 
   count: number | null, 
   error: any 
 }> => {
-  const { status, limit = 10, offset = 0 } = options || {};
+  const { status, limit = 50, offset = 0 } = options;
   
-  let query = supabase
-    .from('orders')
-    .select('*', { count: 'exact' });
-  
-  if (status) {
-    query = query.eq('payment_status', status);
+  try {
+    let query = supabase
+      .from('orders')
+      .select('*', { count: 'exact' });
+    
+    if (status) {
+      query = query.eq('payment_status', status);
+    }
+    
+    const { data, error, count } = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    
+    return { data, count, error };
+  } catch (error) {
+    console.error('Error in getOrders:', error);
+    return { data: null, count: null, error };
   }
-  
-  const { data, count, error } = await query
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
-  
-  return { data, count, error };
+};
+
+// Types for admin dashboard features
+export interface OrdersFilter {
+  status?: string;
+  startDate?: Date | null;
+  endDate?: Date | null;
+  searchQuery?: string;
+}
+
+export interface OrderWithCustomer extends Order {
+  customer_email?: string;
+}
+
+export interface DailySummary {
+  totalOrders: number;
+  totalRevenue: number;
+  newCustomers: number;
+  date: string;
+}
+
+/**
+ * Get filtered orders for the admin dashboard
+ */
+export const getFilteredOrders = async (
+  filter: OrdersFilter = {},
+  limit = 100
+): Promise<{ data: OrderWithCustomer[] | null, error: any }> => {
+  try {
+    const { status, startDate, endDate, searchQuery } = filter;
+    
+    console.log('Filter params:', { status, startDate, endDate, searchQuery });
+    
+    let query = supabase
+      .from('orders')
+      .select('*');
+    
+    // Apply filters
+    if (status) {
+      query = query.eq('payment_status', status);
+    }
+    
+    if (startDate && startDate instanceof Date) {
+      query = query.gte('created_at', startDate.toISOString());
+    }
+    
+    if (endDate && endDate instanceof Date) {
+      const endOfDay = new Date(endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      query = query.lte('created_at', endOfDay.toISOString());
+    }
+    
+    if (searchQuery) {
+      query = query.ilike('customer_name', `%${searchQuery}%`);
+    }
+    
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    
+    console.log(`Orders fetched: ${data?.length || 0}`, error ? `Error: ${error.message}` : '');
+    
+    return { data, error };
+  } catch (error) {
+    console.error('Error in getFilteredOrders:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Get daily stats for dashboard summary
+ */
+export const getDailySummary = async (date: Date): Promise<DailySummary> => {
+  try {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    // Get orders for this day
+    const { data: orders, error } = await supabase
+      .from('orders')
+      .select('*')
+      .gte('created_at', startOfDay.toISOString())
+      .lte('created_at', endOfDay.toISOString());
+    
+    if (error) {
+      console.error('Error fetching daily summary:', error);
+      return {
+        totalOrders: 0,
+        totalRevenue: 0,
+        newCustomers: 0,
+        date: date.toISOString()
+      };
+    }
+    
+    // Calculate stats
+    const totalOrders = orders?.length || 0;
+    const totalRevenue = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+    
+    // Count unique customers (this is a simplification - ideally we'd check if they are new)
+    const uniqueCustomers = new Set(orders?.map(order => order.customer_name || ''));
+    
+    return {
+      totalOrders,
+      totalRevenue,
+      newCustomers: uniqueCustomers.size,
+      date: date.toISOString()
+    };
+  } catch (error) {
+    console.error('Error in getDailySummary:', error);
+    return {
+      totalOrders: 0,
+      totalRevenue: 0,
+      newCustomers: 0,
+      date: date.toISOString()
+    };
+  }
+};
+
+/**
+ * Get orders trend for the past days
+ */
+export const getOrdersTrend = async (days = 7): Promise<{ 
+  dates: string[], 
+  orderCounts: number[], 
+  revenue: number[] 
+}> => {
+  try {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - (days - 1));
+    startDate.setHours(0, 0, 0, 0);
+    
+    // Get orders for date range
+    const { data: orders, error } = await supabase
+      .from('orders')
+      .select('*')
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString())
+      .order('created_at', { ascending: true });
+    
+    if (error) {
+      console.error('Error fetching orders trend:', error);
+      return { dates: [], orderCounts: [], revenue: [] };
+    }
+    
+    // Prepare date labels and data arrays
+    const dates: string[] = [];
+    const orderCounts: number[] = [];
+    const revenue: number[] = [];
+    
+    // Initialize arrays with zeros for all days
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
+      dates.push(formatDate(date));
+      orderCounts.push(0);
+      revenue.push(0);
+    }
+    
+    // Fill in data from orders
+    if (orders) {
+      orders.forEach(order => {
+        const orderDate = new Date(order.created_at);
+        const dateStr = formatDate(orderDate);
+        const dayIndex = dates.indexOf(dateStr);
+        
+        if (dayIndex !== -1) {
+          orderCounts[dayIndex]++;
+          revenue[dayIndex] += order.total_amount || 0;
+        }
+      });
+    }
+    
+    return { dates, orderCounts, revenue };
+  } catch (error) {
+    console.error('Error in getOrdersTrend:', error);
+    return { dates: [], orderCounts: [], revenue: [] };
+  }
+};
+
+/**
+ * Helper function to format date as "MMM DD"
+ */
+const formatDate = (date: Date): string => {
+  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+  return date.toLocaleDateString('en-US', options);
 };
