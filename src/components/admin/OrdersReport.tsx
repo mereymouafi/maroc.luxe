@@ -712,13 +712,7 @@ const OrdersReport: React.FC<OrdersReportProps> = ({ selectedDate }) => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      // Open the report in a new tab for printing
-      const printWindow = window.open(url, '_blank');
-      if (printWindow) {
-        printWindow.onload = () => {
-          printWindow.print();
-        };
-      }
+      // No longer opening in a new tab - just download
     } catch (err) {
       console.error('Failed to generate HTML report:', err);
       setError('An unexpected error occurred');
