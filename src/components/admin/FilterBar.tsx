@@ -41,7 +41,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
               name="search"
               id="search"
               className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md p-2 border"
-              placeholder="Name or email"
+              placeholder="Name "
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
             />

@@ -215,7 +215,9 @@ const OrdersAdminPage: React.FC = () => {
         <title>Admin Dashboard - MarocLuxe</title>
       </Helmet>
       
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Orders Dashboard</h1>
+      <div className="mt-12 pt-8 border-t border-gray-100">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6">Orders Dashboard</h1>
+      </div>
       
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
