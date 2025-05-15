@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Trash2, X, CreditCard, ShoppingBag, Check, DollarSign } from 'lucide-react';
+import { Trash2, X, ShoppingBag, Check, DollarSign } from 'lucide-react';
 
 // Import CartContext
 import { CartContext } from '../context/CartContext';
@@ -15,8 +15,7 @@ const CartPage: React.FC = () => {
   const [promoCode, setPromoCode] = React.useState('');
   const [promoError, setPromoError] = React.useState<string | null>(null);
   const [promoSuccess, setPromoSuccess] = React.useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = React.useState('card');
-  const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
+  const [isProcessingPayment] = React.useState(false);
 
   // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -45,24 +44,8 @@ const CartPage: React.FC = () => {
   const navigate = useNavigate();
   
   const handleCheckout = () => {
-    // If COD is selected, go to our new Checkout page
-    if (paymentMethod === 'cod') {
-      navigate('/checkout');
-    } else {
-      // For other payment methods, show message (these would be implemented separately)
-      setIsProcessingPayment(true);
-      
-      // Simulate payment processing
-      setTimeout(() => {
-        setIsProcessingPayment(false);
-        
-        if (paymentMethod === 'paypal') {
-          alert('Redirecting to PayPal for payment... (Not implemented in this demo)');
-        } else {
-          alert('Credit card payments not implemented in this demo. Please use Cash on Delivery option.');
-        }
-      }, 1000);
-    }
+    // Go to the checkout page for Cash on Delivery
+    navigate('/checkout');
   };
 
   // Get brand name function
@@ -268,57 +251,24 @@ const CartPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Payment Method Selection */}
-                  <div className="mb-6">
+                  {/* Payment Method */}
+                  <div className="mb-4">
                     <h3 className="text-sm font-medium text-luxury-black mb-3">Payment Method</h3>
-                    
-                    <div className="space-y-3">
-                      <label className="flex items-center p-3 border border-luxury-gray rounded-sm cursor-pointer">
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value="card"
-                          checked={paymentMethod === 'card'}
-                          onChange={() => setPaymentMethod('card')}
-                          className="h-4 w-4 border-luxury-gray text-luxury-gold focus:ring-luxury-gold"
-                        />
-                        <span className="ml-2">Credit Card</span>
-                        <div className="ml-auto flex space-x-1">
-                          <div className="w-6 h-4 bg-blue-600 rounded"></div>
-                          <div className="w-6 h-4 bg-red-500 rounded"></div>
-                          <div className="w-6 h-4 bg-gray-800 rounded"></div>
-                        </div>
-                      </label>
-
-                      <label className="flex items-center p-3 border border-luxury-gray rounded-sm cursor-pointer">
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value="paypal"
-                          checked={paymentMethod === 'paypal'}
-                          onChange={() => setPaymentMethod('paypal')}
-                          className="h-4 w-4 border-luxury-gray text-luxury-gold focus:ring-luxury-gold"
-                        />
-                        <span className="ml-2">PayPal</span>
-                        <div className="ml-auto">
-                          <div className="w-12 h-4 bg-blue-700 rounded"></div>
-                        </div>
-                      </label>
-
-                      <label className="flex items-center p-3 border border-luxury-gray rounded-sm cursor-pointer">
+                    <div className="space-y-2">
+                      <div className="flex items-center p-3 border border-luxury-gray rounded-sm bg-green-50">
                         <input
                           type="radio"
                           name="paymentMethod"
                           value="cod"
-                          checked={paymentMethod === 'cod'}
-                          onChange={() => setPaymentMethod('cod')}
+                          checked={true}
+                          readOnly
                           className="h-4 w-4 border-luxury-gray text-luxury-gold focus:ring-luxury-gold"
                         />
-                        <span className="ml-2">Cash On Delivery (COD)</span>
+                        <span className="ml-2 font-medium">Cash On Delivery (COD)</span>
                         <div className="ml-auto">
                           <div className="w-6 h-4 bg-green-600 rounded"></div>
                         </div>
-                      </label>
+                      </div>
                     </div>
                   </div>
                   
@@ -342,9 +292,7 @@ const CartPage: React.FC = () => {
                       </span>
                     ) : (
                       <>
-                        {paymentMethod === 'card' && <CreditCard size={20} className="mr-2" />}
-                        {paymentMethod === 'paypal' && <span className="font-bold text-lg mr-2">P</span>}
-                        {paymentMethod === 'cod' && <DollarSign size={20} className="mr-2" />}
+                        <DollarSign size={20} className="mr-2" />
                         Proceed to Checkout
                       </>
                     )}

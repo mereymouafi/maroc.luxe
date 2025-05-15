@@ -126,12 +126,7 @@ const Footer: React.FC = () => {
 
         <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
           <p>&copy; {new Date().getFullYear()} Luxe Maroc. All rights reserved.</p>
-          <div className="mt-4 md:mt-0 flex space-x-4">
-            <img src="https://www.svgrepo.com/show/328132/visa.svg" alt="Visa" className="h-6 w-auto" />
-            <img src="https://www.svgrepo.com/show/328130/mastercard.svg" alt="Mastercard" className="h-6 w-auto" />
-            <img src="https://www.svgrepo.com/show/328127/paypal.svg" alt="PayPal" className="h-6 w-auto" />
-            <img src="https://www.svgrepo.com/show/328093/american-express.svg" alt="American Express" className="h-6 w-auto" />
-          </div>
+          
         </div>
       </div>
     </footer>
