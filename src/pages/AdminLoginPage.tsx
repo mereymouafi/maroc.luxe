@@ -136,7 +136,7 @@ const AdminLoginPage: React.FC = () => {
                       autoComplete="email"
                       required
                       className="appearance-none relative block w-full px-3 py-3 border border-gray-600 bg-gray-800/50 placeholder-gray-400 text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm backdrop-blur-sm transition-all duration-200 hover:border-blue-400"
-                      placeholder="admin@example.com"
+                      placeholder="Enter your admin email address"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                     />
@@ -154,7 +154,7 @@ const AdminLoginPage: React.FC = () => {
                       autoComplete="current-password"
                       required
                       className="appearance-none relative block w-full px-3 py-3 border border-gray-600 bg-gray-800/50 placeholder-gray-400 text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm backdrop-blur-sm transition-all duration-200 hover:border-blue-400"
-                      placeholder="••••••••"
+                      placeholder="Please enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
