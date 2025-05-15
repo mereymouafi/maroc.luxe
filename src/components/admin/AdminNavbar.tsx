@@ -24,16 +24,13 @@ const AdminNavbar: React.FC = () => {
   return (
     <nav className="bg-gray-900 text-white px-6 py-4 flex justify-between items-center mb-6 shadow-lg">
       <div className="flex items-center space-x-4">
-        <Link to="/admin/orders" className="font-bold text-xl flex items-center">
+        <Link to="/admin/orders" className="font-bold text-xl flex items-center hover:no-underline hover:opacity-100">
           <span className="text-luxury-gold">Maroc</span>
           <span className="text-white ml-1">Luxe</span>
           <span className="ml-3 text-gray-400 font-normal">Admin</span>
         </Link>
         <div className="hidden md:flex space-x-6 ml-8">
-          <Link to="/admin/orders" className="hover:text-luxury-gold flex items-center transition-colors duration-200">
-            <ShoppingBagIcon className="h-5 w-5 mr-1" />
-            <span>Orders</span>
-          </Link>
+         
           {/* Add more admin links as needed */}
         </div>
       </div>
