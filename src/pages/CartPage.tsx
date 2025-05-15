@@ -151,18 +151,18 @@ const CartPage: React.FC = () => {
                         {/* Quantity */}
                         <div className="md:col-span-2 flex justify-between md:justify-center items-center">
                           <span className="md:hidden">Quantity:</span>
-                          <div className="flex items-center border border-luxury-gray">
+                          <div className="inline-flex items-center">
                             <button 
                               onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                              className="px-2 py-1 text-luxury-black"
+                              className="px-2 py-1 text-luxury-black border border-luxury-gray border-r-0"
                               disabled={item.quantity <= 1}
                             >
                               -
                             </button>
-                            <span className="w-8 text-center">{item.quantity}</span>
+                            <span className="w-8 text-center border border-luxury-gray">{item.quantity}</span>
                             <button 
                               onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                              className="px-2 py-1 text-luxury-black"
+                              className="px-2 py-1 text-luxury-black border border-luxury-gray border-l-0"
                               disabled={item.quantity >= 10}
                             >
                               +

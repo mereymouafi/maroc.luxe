@@ -218,18 +218,18 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
                   {/* Quantity selector */}
                   <div className="mb-6">
                     <div className="text-sm font-medium text-luxury-black mb-2">Quantity</div>
-                    <div className="flex items-center border border-luxury-gray inline-block">
+                    <div className="inline-flex items-center">
                       <button 
                         onClick={() => handleQuantityChange(-1)}
-                        className="px-4 py-2 text-luxury-black focus:outline-none"
+                        className="px-4 py-2 text-luxury-black focus:outline-none border border-luxury-gray border-r-0"
                         disabled={quantity <= 1}
                       >
                         <Minus size={16} />
                       </button>
-                      <span className="px-4 py-2 border-x border-luxury-gray">{quantity}</span>
+                      <span className="px-4 py-2 border border-luxury-gray">{quantity}</span>
                       <button 
                         onClick={() => handleQuantityChange(1)}
-                        className="px-4 py-2 text-luxury-black focus:outline-none"
+                        className="px-4 py-2 text-luxury-black focus:outline-none border border-luxury-gray border-l-0"
                         disabled={quantity >= 10}
                       >
                         <Plus size={16} />
