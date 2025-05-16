@@ -1,10 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { ArrowRight } from 'lucide-react';
+import { getCategories, Category } from '../lib/categoryService';
 
 const HomePage: React.FC = () => {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  // Fetch categories from Supabase
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setLoadingCategories(true);
+      try {
+        const { data, error } = await getCategories();
+        if (error) {
+          console.error('Error fetching categories:', error);
+        } else {
+          // Get up to 6 categories to display
+          setCategories(data?.slice(0, 6) || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
+
   return (
     <>
       <Helmet>
@@ -55,41 +81,46 @@ const HomePage: React.FC = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { id: 1, title: 'Handbags', image: 'https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg', link: '/shop/handbags' },
-              { id: 2, title: 'Footwear', image: 'https://images.pexels.com/photos/267320/pexels-photo-267320.jpeg', link: '/shop/footwear' },
-              { id: 3, title: 'Accessories', image: 'https://images.pexels.com/photos/1374128/pexels-photo-1374128.jpeg', link: '/shop/accessories' },
-              { id: 4, title: 'T-shirts', image: 'https://images.pexels.com/photos/1656684/pexels-photo-1656684.jpeg', link: '/shop/tshirts' },
-              { id: 5, title: 'Jeans', image: 'https://images.pexels.com/photos/1082529/pexels-photo-1082529.jpeg', link: '/shop/jeans' },
-              { id: 6, title: 'Luggage', image: 'https://images.pexels.com/photos/2421374/pexels-photo-2421374.jpeg', link: '/shop/luggage' },
-            ].map((category) => (
-              <motion.div
-                key={category.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: category.id * 0.1 }}
-                viewport={{ once: true }}
-                className="group relative overflow-hidden"
-              >
-                <Link to={category.link} className="block relative aspect-[3/4] overflow-hidden">
-                  <img 
-                    src={category.image} 
-                    alt={category.title} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-20 transition-opacity duration-300 group-hover:bg-opacity-30"></div>
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                    <h3 className="text-2xl font-serif mb-2">{category.title}</h3>
-                    <span className="flex items-center text-sm font-medium">
-                      Shop Now 
-                      <ArrowRight size={16} className="ml-2 transition-transform duration-300 group-hover:translate-x-1" />
-                    </span>
+          {loadingCategories ? (
+            <div className="text-center py-8">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-luxury-gold border-opacity-50 border-r-luxury-gold"></div>
+              <p className="mt-2 text-luxury-gray">Loading categories...</p>
+            </div>
+          ) : categories.length === 0 ? (
+            <div className="text-center py-8 col-span-3">
+              <p className="text-luxury-gray">No categories found. Visit the admin dashboard to add some!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {categories.map((category, index) => (
+                <motion.div
+                  key={category.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="group relative overflow-hidden"
+                >
+                  <Link to={`/shop/${category.slug}`} className="block relative aspect-[3/4] overflow-hidden">
+                    <img 
+                      src={category.image || 'https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg'} 
+                      alt={category.name} 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-6">
+                      <h3 className="text-white font-serif text-xl">{category.name}</h3>
+                    </div>
+                  </Link>
+                  <div className="absolute bottom-0 left-0 w-full p-6 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Link to={`/shop/${category.slug}`} className="text-white hover:text-luxury-gold transition-colors">
+                      Shop Now
+                    </Link>
+                    <ArrowRight className="text-luxury-gold" size={20} />
                   </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

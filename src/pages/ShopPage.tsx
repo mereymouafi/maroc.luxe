@@ -5,8 +5,9 @@ import { motion } from 'framer-motion';
 import { Filter, X, ChevronDown } from 'lucide-react';
 
 // Import products data and QuickViewModal
-import { products, categories, brands, Product } from '../data/products';
+import { products, brands, Product } from '../data/products';
 import QuickViewModal from '../components/common/QuickViewModal';
+import { getCategories, Category } from '../lib/categoryService';
 
 const ShopPage: React.FC = () => {
   const { category } = useParams<{ category?: string }>();
@@ -18,6 +19,10 @@ const ShopPage: React.FC = () => {
     sortBy: 'newest',
   });
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  
+  // Dynamic categories from Supabase
+  const [dbCategories, setDbCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   
   // Quick View Modal state
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
@@ -36,6 +41,27 @@ const ShopPage: React.FC = () => {
   const closeQuickView = () => {
     setIsQuickViewOpen(false);
   };
+  
+  // Fetch categories from Supabase
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setLoadingCategories(true);
+      try {
+        const { data, error } = await getCategories();
+        if (error) {
+          console.error('Error fetching categories:', error);
+        } else {
+          setDbCategories(data || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
 
   // Update filtered products when filters change
   useEffect(() => {
@@ -97,11 +123,11 @@ const ShopPage: React.FC = () => {
   const getPageTitle = () => {
     if (!category) return 'Shop All';
     
-    // Check if it's a category
-    const categoryMatch = categories.find(cat => cat.id === category);
+    // Check if it's a category from Supabase
+    const categoryMatch = dbCategories.find(cat => cat.slug === category);
     if (categoryMatch) return categoryMatch.name;
     
-    // Check if it's a brand
+    // Fallback to checking static categories
     const brandMatch = brands.find(brand => brand.id === category);
     if (brandMatch) return brandMatch.name;
     
@@ -138,21 +164,36 @@ const ShopPage: React.FC = () => {
                 {/* Category Filter */}
                 <div className="mb-8">
                   <h4 className="text-sm font-medium text-luxury-black mb-3">Category</h4>
-                  <div className="space-y-2">
-                    {categories.map(cat => (
-                      <label key={cat.id} className="flex items-center">
+                  {loadingCategories ? (
+                    <p className="text-sm text-luxury-gray">Loading categories...</p>
+                  ) : (
+                    <div className="space-y-2">
+                      <label className="flex items-center">
                         <input
                           type="radio"
                           name="category"
-                          value={cat.id}
-                          checked={filters.category === cat.id}
-                          onChange={() => handleFilterChange('category', cat.id)}
+                          value="all"
+                          checked={filters.category === 'all'}
+                          onChange={() => handleFilterChange('category', 'all')}
                           className="h-4 w-4 border-luxury-gray text-luxury-gold focus:ring-luxury-gold"
                         />
-                        <span className="ml-2 text-luxury-gray">{cat.name}</span>
+                        <span className="ml-2 text-luxury-gray">All Products</span>
                       </label>
-                    ))}
-                  </div>
+                      {dbCategories.map(cat => (
+                        <label key={cat.id} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="category"
+                            value={cat.slug}
+                            checked={filters.category === cat.slug}
+                            onChange={() => handleFilterChange('category', cat.slug)}
+                            className="h-4 w-4 border-luxury-gray text-luxury-gold focus:ring-luxury-gold"
+                          />
+                          <span className="ml-2 text-luxury-gray">{cat.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
                 {/* Brand Filter */}
@@ -243,21 +284,36 @@ const ShopPage: React.FC = () => {
                 {/* Category Filter */}
                 <div className="mb-8">
                   <h4 className="text-sm font-medium text-luxury-black mb-3">Category</h4>
-                  <div className="space-y-2">
-                    {categories.map(cat => (
-                      <label key={cat.id} className="flex items-center">
+                  {loadingCategories ? (
+                    <p className="text-sm text-luxury-gray">Loading categories...</p>
+                  ) : (
+                    <div className="space-y-2">
+                      <label className="flex items-center">
                         <input
                           type="radio"
                           name="category-mobile"
-                          value={cat.id}
-                          checked={filters.category === cat.id}
-                          onChange={() => handleFilterChange('category', cat.id)}
+                          value="all"
+                          checked={filters.category === 'all'}
+                          onChange={() => handleFilterChange('category', 'all')}
                           className="h-4 w-4 border-luxury-gray text-luxury-gold focus:ring-luxury-gold"
                         />
-                        <span className="ml-2 text-luxury-gray">{cat.name}</span>
+                        <span className="ml-2 text-luxury-gray">All Products</span>
                       </label>
-                    ))}
-                  </div>
+                      {dbCategories.map(cat => (
+                        <label key={cat.id} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="category-mobile"
+                            value={cat.slug}
+                            checked={filters.category === cat.slug}
+                            onChange={() => handleFilterChange('category', cat.slug)}
+                            className="h-4 w-4 border-luxury-gray text-luxury-gold focus:ring-luxury-gold"
+                          />
+                          <span className="ml-2 text-luxury-gray">{cat.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
                 {/* Brand Filter */}
