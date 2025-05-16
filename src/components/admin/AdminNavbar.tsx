@@ -1,8 +1,8 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 // Import icons
-import { HomeIcon, ShoppingBagIcon, UserIcon, PhoneIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, ShoppingBagIcon, UserIcon, PhoneIcon, ArrowRightOnRectangleIcon, TagIcon, ArchiveBoxIcon } from '@heroicons/react/24/outline';
 
 const AdminNavbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -21,6 +21,12 @@ const AdminNavbar: React.FC = () => {
     }
   };
 
+  const location = useLocation();
+  
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+  
   return (
     <nav className="bg-gray-900 text-white px-6 py-4 flex justify-between items-center mb-6 shadow-lg">
       <div className="flex items-center space-x-4">
@@ -29,9 +35,27 @@ const AdminNavbar: React.FC = () => {
           <span className="text-white ml-1">Luxe</span>
           <span className="ml-3 text-gray-400 font-normal">Admin</span>
         </Link>
-        <div className="hidden md:flex space-x-6 ml-8">
-         
-          {/* Add more admin links as needed */}
+        <div className="hidden md:flex space-x-4 ml-8">
+          <Link 
+            to="/admin/orders" 
+            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${isActive('/admin/orders') ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
+          >
+            Orders
+          </Link>
+          <Link 
+            to="/admin/categories" 
+            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${isActive('/admin/categories') ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
+          >
+            <TagIcon className="h-4 w-4 inline mr-1" />
+            Categories
+          </Link>
+          <Link 
+            to="/admin/products" 
+            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${isActive('/admin/products') ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
+          >
+            <ArchiveBoxIcon className="h-4 w-4 inline mr-1" />
+            Products
+          </Link>
         </div>
       </div>
       <div className="flex items-center">

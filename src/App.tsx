@@ -12,6 +12,8 @@ import CartPage from './pages/CartPage';
 import Checkout from './pages/Checkout';
 import OrderConfirmation from './pages/OrderConfirmation';
 import OrdersAdminPage from './pages/OrdersAdminPage';
+import CategoriesAdminPage from './pages/CategoriesAdminPage';
+import ProductsAdminPage from './pages/ProductsAdminPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import NotFoundPage from './pages/NotFoundPage';
 import SearchResultsPage from './pages/SearchResultsPage';
@@ -47,6 +49,8 @@ function App() {
             <Route path="/admin" element={<ProtectedRoute />}>
               <Route element={<AdminLayout />}>
                 <Route path="orders" element={<OrdersAdminPage />} />
+                <Route path="categories" element={<CategoriesAdminPage />} />
+                <Route path="products" element={<ProductsAdminPage />} />
                 {/* Add more admin routes here as needed */}
               </Route>
             </Route>
