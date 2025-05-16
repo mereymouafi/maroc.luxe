@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
-import { brands } from '../data/products';
+import { brands, products, categories } from '../data/products';
 
 interface Product {
   id: string;
@@ -30,10 +31,17 @@ interface Category {
 }
 
 const ProductsAdminPage: React.FC = () => {
+  // Get URL parameters
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const categoryIdFromUrl = searchParams.get('categoryId');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [dbProducts, setDbProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [dbCategories, setDbCategories] = useState<Category[]>([]);
+  const [importing, setImporting] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(categoryIdFromUrl);
   
   // Form state
   const [name, setName] = useState('');
@@ -74,6 +82,20 @@ const ProductsAdminPage: React.FC = () => {
     };
   }, []);
 
+  // Update selectedCategoryId when URL parameter changes
+  useEffect(() => {
+    setSelectedCategoryId(categoryIdFromUrl);
+  }, [categoryIdFromUrl]);
+
+  // Filter products when selectedCategoryId changes
+  useEffect(() => {
+    if (selectedCategoryId) {
+      setFilteredProducts(dbProducts.filter(product => product.category_id === selectedCategoryId));
+    } else {
+      setFilteredProducts(dbProducts);
+    }
+  }, [selectedCategoryId, dbProducts]);
+
   const fetchCategories = async () => {
     try {
       const { data, error } = await supabase
@@ -85,7 +107,7 @@ const ProductsAdminPage: React.FC = () => {
         throw error;
       }
 
-      setCategories(data || []);
+      setDbCategories(data || []);
     } catch (err) {
       console.error('Error fetching categories:', err);
     }
@@ -103,7 +125,15 @@ const ProductsAdminPage: React.FC = () => {
         throw error;
       }
 
-      setProducts(data || []);
+      const productsData = data || [];
+      setDbProducts(productsData);
+      
+      // Apply category filter if one is selected
+      if (selectedCategoryId) {
+        setFilteredProducts(productsData.filter(product => product.category_id === selectedCategoryId));
+      } else {
+        setFilteredProducts(productsData);
+      }
     } catch (err) {
       console.error('Error fetching products:', err);
       setError('Failed to fetch products');
@@ -215,8 +245,15 @@ const ProductsAdminPage: React.FC = () => {
         throw error;
       }
 
-      // Filter out the deleted product from the state
-      setProducts(products.filter(product => product.id !== id));
+      // Filter out the deleted product from both product states
+      setDbProducts(dbProducts.filter(product => product.id !== id));
+      setFilteredProducts(filteredProducts.filter(product => product.id !== id));
+      
+      // Show success message
+      setSuccessMessage('Product deleted successfully');
+      
+      // Clear the success message after 3 seconds
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err: any) {
       console.error('Error deleting product:', err);
       setError(err.message || 'Failed to delete product');
@@ -224,8 +261,113 @@ const ProductsAdminPage: React.FC = () => {
   };
 
   const getCategoryName = (categoryId: string): string => {
-    const category = categories.find(cat => cat.id === categoryId);
+    const category = dbCategories.find(cat => cat.id === categoryId);
     return category ? category.name : 'Unknown';
+  };
+  
+  const importAllProducts = async () => {
+    setImporting(true);
+    setError(null);
+    setSuccessMessage('');
+    
+    try {
+      // First, ensure all categories exist in the database
+      const categoryMap: Record<string, string> = {};
+      
+      // If we have existing categories, populate the map
+      if (dbCategories.length > 0) {
+        dbCategories.forEach(cat => {
+          categoryMap[cat.slug] = cat.id;
+        });
+      } else {
+        // If no categories exist, we need to create them first
+        console.log('No categories found, creating categories...');
+        
+        // Filter out the 'all' category
+        const categoriesToInsert = categories
+          .filter(cat => cat.id !== 'all')
+          .map(cat => ({
+            slug: cat.id,
+            name: cat.name
+          }));
+        
+        const { data: insertedCategories, error: insertError } = await supabase
+          .from('categories')
+          .insert(categoriesToInsert)
+          .select();
+        
+        if (insertError) {
+          throw new Error(`Error creating categories: ${insertError.message}`);
+        }
+        
+        if (insertedCategories) {
+          insertedCategories.forEach(cat => {
+            categoryMap[cat.slug] = cat.id;
+          });
+          // Refresh categories list
+          fetchCategories();
+        }
+      }
+      
+      let addedCount = 0;
+      let skippedCount = 0;
+      let errorCount = 0;
+      
+      // Import each product from the products.ts file
+      for (const product of products) {
+        // Check if product already exists by name
+        const { data: existingProduct } = await supabase
+          .from('products')
+          .select('id, name')
+          .eq('name', product.name)
+          .maybeSingle();
+        
+        if (existingProduct) {
+          skippedCount++;
+          continue;
+        }
+        
+        // Convert the product to the database format
+        const productToInsert = {
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          category_id: categoryMap[product.category], // Map the category slug to ID
+          brand: product.brand || null,
+          image: product.image,
+          images: product.images,
+          is_new: product.isNew || false,
+          is_best_seller: product.isBestSeller || false,
+          color: product.color,
+          dimensions: product.dimensions,
+          material: product.material,
+          made_in: product.madeIn,
+          sizes: product.sizes || null,
+        };
+        
+        // Insert the product
+        const { error: insertError } = await supabase
+          .from('products')
+          .insert([productToInsert]);
+        
+        if (insertError) {
+          errorCount++;
+          console.error(`Error adding product "${product.name}":`, insertError);
+        } else {
+          addedCount++;
+        }
+      }
+      
+      setSuccessMessage(`Import completed: ${addedCount} products added, ${skippedCount} skipped, ${errorCount} errors`);
+      
+      // Refresh the products list
+      fetchProducts();
+    } catch (err: any) {
+      console.error('Import failed:', err);
+      setError(`Import failed: ${err.message}`);
+    } finally {
+      setImporting(false);
+    }
   };
 
   return (
@@ -236,6 +378,13 @@ const ProductsAdminPage: React.FC = () => {
 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Product Management</h1>
+        <button
+          onClick={importAllProducts}
+          disabled={importing}
+          className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out disabled:opacity-50"
+        >
+          {importing ? 'Importing...' : 'Import All Products from products.ts'}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -315,7 +464,7 @@ const ProductsAdminPage: React.FC = () => {
                   required
                 >
                   <option value="">Select a category</option>
-                  {categories.map((category) => (
+                  {dbCategories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
                     </option>
@@ -496,14 +645,42 @@ const ProductsAdminPage: React.FC = () => {
 
         {/* Products List */}
         <div className="bg-white shadow-md rounded-lg p-6">
+          {/* Category Filter */}
+          <div className="mb-6">
+            <h3 className="text-lg font-medium text-gray-700 mb-2">Filter by Category</h3>
+            <div className="flex flex-wrap gap-2">
+              <button
+                className={`px-3 py-1 rounded text-sm transition-colors ${selectedCategoryId === null ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                onClick={() => setSelectedCategoryId(null)}
+              >
+                All Products
+              </button>
+              {dbCategories.map((category) => (
+                <button
+                  key={category.id}
+                  className={`px-3 py-1 rounded text-sm transition-colors ${selectedCategoryId === category.id ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                  onClick={() => setSelectedCategoryId(category.id)}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          </div>
           <h2 className="text-xl font-semibold mb-4">Existing Products</h2>
           
           {loading ? (
             <p className="text-gray-500">Loading products...</p>
-          ) : products.length === 0 ? (
-            <p className="text-gray-500">No products found</p>
+          ) : filteredProducts.length === 0 ? (
+            <p className="text-gray-500">No products found{selectedCategoryId ? ` in this category` : ''}</p>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+              <div className="mb-2">
+                <p className="text-sm text-gray-600">
+                  Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
+                  {selectedCategoryId ? ` in ${getCategoryName(selectedCategoryId)}` : ''}
+                </p>
+              </div>
+              <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -522,7 +699,7 @@ const ProductsAdminPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {products.map((product) => (
+                  {filteredProducts.map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -553,7 +730,8 @@ const ProductsAdminPage: React.FC = () => {
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           )}
         </div>
       </div>

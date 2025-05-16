@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { importExistingCategories } from '../lib/importExistingCategories';
 
@@ -161,11 +162,39 @@ const CategoriesAdminPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this category?')) {
+    if (!window.confirm('Are you sure you want to delete this category and ALL of its associated products?')) {
       return;
     }
 
+    setLoading(true);
+    setError(null);
+    
     try {
+      // First, get all products in this category
+      const { data: productsInCategory, error: fetchError } = await supabase
+        .from('products')
+        .select('id')
+        .eq('category_id', id);
+        
+      if (fetchError) {
+        throw fetchError;
+      }
+      
+      // Delete all products in this category
+      if (productsInCategory && productsInCategory.length > 0) {
+        const { error: deleteProductsError } = await supabase
+          .from('products')
+          .delete()
+          .eq('category_id', id);
+          
+        if (deleteProductsError) {
+          throw deleteProductsError;
+        }
+        
+        console.log(`Deleted ${productsInCategory.length} products from category ${id}`);
+      }
+      
+      // Now delete the category itself
       const { error } = await supabase
         .from('categories')
         .delete()
@@ -177,9 +206,15 @@ const CategoriesAdminPage: React.FC = () => {
 
       // Filter out the deleted category from the state
       setCategories(categories.filter(category => category.id !== id));
+      setSuccessMessage(`Category and ${productsInCategory?.length || 0} associated products deleted successfully`);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err: any) {
       console.error('Error deleting category:', err);
       setError(err.message || 'Failed to delete category');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -309,6 +344,9 @@ const CategoriesAdminPage: React.FC = () => {
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Slug
                     </th>
+                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Products
+                    </th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
@@ -329,6 +367,14 @@ const CategoriesAdminPage: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {category.slug}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                        <Link 
+                          to={`/admin/products?categoryId=${category.id}`}
+                          className="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-1 rounded-full text-xs transition-colors"
+                        >
+                          View Products
+                        </Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
